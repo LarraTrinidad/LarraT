@@ -1,1 +1,5 @@
 TestHello.hpp
+Test2dVertexBasedSimulationWithSrnModels_LT.hpp
+TestSdkSimulations.hpp
+TestSdkSimulationsWithToroidalMesh.hpp
+TestSimulationsForSdkPaper.hpp
