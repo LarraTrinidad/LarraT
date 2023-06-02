@@ -37,6 +37,10 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define TESTDELTANOTCHEDGEINTERIORODESIMULATION_HPP_
 
 #include <cxxtest/TestSuite.h>
+
+// Must be included before other cell_based headers
+#include "CellBasedSimulationArchiver.hpp"
+
 #include "CheckpointArchiveTypes.hpp"
 #include "AbstractCellBasedTestSuite.hpp"
 #include "HoneycombVertexMeshGenerator.hpp"
@@ -68,6 +72,36 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "DeltaNotchInteriorSrnModel.hpp"
 #include "DeltaNotchEdgeInteriorTrackingModifier.hpp"
+
+
+// from Sidekick
+#include "AbstractCellBasedWithTimingsTestSuite.hpp"
+#include "HoneycombVertexMeshGenerator.hpp"
+#include "CellsGenerator.hpp"
+#include "NoCellCycleModel.hpp"
+#include "ConstantTargetAreaModifier.hpp"
+#include "OffLatticeSimulation.hpp"
+#include "FakePetscSetup.hpp"
+#include "ExtrinsicPullModifier.hpp"
+#include "SidekickBoundaryCondition.hpp"
+#include "ForceForScenario4.hpp"
+
+
+
+static const double M_DT = 0.1;
+static const double M_RELAXATION_TIME = 10; 
+static const double M_EXTENSION_TIME = 10; 
+static const double M_VIS_TIME_STEP = 1;
+static const unsigned M_NUM_CELLS_WIDE = 14;
+static const unsigned M_NUM_CELLS_HIGH = 20;
+// Specify mechanical parameter values
+    // -0.259,0.172
+double k = 1.0;
+double lambda_bar = 0.05;
+double gamma_bar = 0.04;
+double heterotypic_line_tension_multiplier = 2.0;
+double supercontractile_line_tension_multiplier = 2.0;
+
 
 
 /**
@@ -150,9 +184,9 @@ public:
         /* We are now in a position to create and configure the cell-based simulation object, pass a force law to it,
          * and run the simulation.*/
         OffLatticeSimulation<2> simulator(cell_population);
-        simulator.SetOutputDirectory("TestDeltaNotchEdgeInteriorODESimulation");
-        simulator.SetSamplingTimestepMultiple(10);
-        simulator.SetEndTime(10.0);
+        simulator.SetOutputDirectory("TestDeltaNotchEdgeInteriorODESimulation_LT");
+        //simulator.SetSamplingTimestepMultiple(10);
+        //simulator.SetEndTime(10.0);
 
         /* Update CellData and CellEdgeData so that SRN simulations can run properly */
         MAKE_PTR(DeltaNotchEdgeInteriorTrackingModifier<2>, p_cell_modifier);
@@ -160,14 +194,38 @@ public:
         MAKE_PTR(DeltaNotchEdgeTrackingModifier<2>, p_edge_modifier);
         simulator.AddSimulationModifier(p_edge_modifier);
 
-        MAKE_PTR(NagaiHondaForce<2>, p_force);
+        MAKE_PTR(ForceForScenario4<2>, p_force);
+        //p_force->SetNumStripes(0);
+        p_force->SetAreaElasticityParameter(k);
+        p_force->SetPerimeterContractilityParameter(gamma_bar*k);
+        p_force->SetHomotypicLineTensionParameter(lambda_bar*pow(k,1.5));
+        p_force->SetHeterotypicLineTensionParameter(heterotypic_line_tension_multiplier*lambda_bar*pow(k,1.5));
+        p_force->SetSupercontractileLineTensionParameter(supercontractile_line_tension_multiplier*lambda_bar*pow(k,1.5));
+        p_force->SetBoundaryLineTensionParameter(lambda_bar*lambda_bar*pow(k,1.5));
+        p_force->SetUseCombinedInterfacesForLineTension(false);
+
+          
         simulator.AddForce(p_force);
+
+        
+
+        MAKE_PTR(ExtrinsicPullModifier, p_pull_modifier);
+        p_pull_modifier->ApplyExtrinsicPullToAllNodes(false);
+        p_pull_modifier->SetSpeed(0.06);
+        simulator.AddSimulationModifier(p_pull_modifier);
+
+       // MAKE_PTR(NagaiHondaForce<2>, p_Nforce);
+       // simulator.AddForce(p_Nforce);
 
         /* This modifier assigns target areas to each cell, which are required by the {{{NagaiHondaForce}}}.
          */
         MAKE_PTR(SimpleTargetAreaModifier<2>, p_growth_modifier);
         simulator.AddSimulationModifier(p_growth_modifier);
-        TS_ASSERT_THROWS_NOTHING(simulator.Solve());
+        //TS_ASSERT_THROWS_NOTHING(simulator.Solve());
+
+
+        simulator.SetEndTime(M_RELAXATION_TIME + M_EXTENSION_TIME);
+        simulator.Solve();
     }
 
     /*
@@ -242,19 +300,49 @@ public:
          * and run the simulation. */
         OffLatticeSimulation<2> simulator(cell_population);
         simulator.SetOutputDirectory("TestDeltaNotchEdgeOnlyODESimulation_LT");
-        simulator.SetSamplingTimestepMultiple(10);
-        simulator.SetEndTime(10.0);
+        //simulator.SetSamplingTimestepMultiple(10);
+        //simulator.SetEndTime(10.0);
 
         /* Update CellEdgeData so that SRN simulations can run properly */
         MAKE_PTR(DeltaNotchEdgeTrackingModifier<2>, p_modifier);
         simulator.AddSimulationModifier(p_modifier);
 
-        MAKE_PTR(NagaiHondaForce<2>, p_force);
+
+        MAKE_PTR(ForceForScenario4<2>, p_force);
+        //p_force->SetNumStripes(0);
+        p_force->SetAreaElasticityParameter(k);
+        p_force->SetPerimeterContractilityParameter(gamma_bar*k);
+        p_force->SetHomotypicLineTensionParameter(lambda_bar*pow(k,1.5));
+        p_force->SetHeterotypicLineTensionParameter(heterotypic_line_tension_multiplier*lambda_bar*pow(k,1.5));
+        p_force->SetSupercontractileLineTensionParameter(supercontractile_line_tension_multiplier*lambda_bar*pow(k,1.5));
+        p_force->SetBoundaryLineTensionParameter(lambda_bar*lambda_bar*pow(k,1.5));
+        p_force->SetUseCombinedInterfacesForLineTension(false);
+
+
         simulator.AddForce(p_force);
 
+       // MAKE_PTR(NagaiHondaForce<2>, p_Nforce);
+       // simulator.AddForce(p_Nforce);
+
+        /* This modifier assigns target areas to each cell, which are required by the {{{NagaiHondaForce}}}.
+         */
         MAKE_PTR(SimpleTargetAreaModifier<2>, p_growth_modifier);
         simulator.AddSimulationModifier(p_growth_modifier);
-        TS_ASSERT_THROWS_NOTHING(simulator.Solve());
+        //TS_ASSERT_THROWS_NOTHING(simulator.Solve());
+
+
+        
+
+        MAKE_PTR(ExtrinsicPullModifier, p_pull_modifier);
+        p_pull_modifier->ApplyExtrinsicPullToAllNodes(false);
+        p_pull_modifier->SetSpeed(0.06);
+        simulator.AddSimulationModifier(p_pull_modifier);
+
+       
+
+        simulator.SetEndTime(M_RELAXATION_TIME + M_EXTENSION_TIME);
+        simulator.Solve();
+
     }
 };
 
