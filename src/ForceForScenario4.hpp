@@ -38,16 +38,16 @@ private:
   
   double GetCombinedInterfaceLength(Node<DIM>* pNode,
                                     unsigned elemIndex,
-                                    unsigned cell1StripeIdentity,
-                                    unsigned cell2StripeIdentity,
+                                 //   unsigned cell1StripeIdentity,
+                                  //  unsigned cell2StripeIdentity,
                                     VertexBasedCellPopulation<DIM>& rVertexCellPopulation);
   
   double GetCombinedInterfaceScaleFactor(Node<DIM>* pNodeA,
                                          Node<DIM>* pNodeB,
                                          unsigned element1Index,
                                          unsigned element2Index,
-                                         unsigned cell1StripeIdentity,
-                                         unsigned cell2StripeIdentity,
+                                     //    unsigned cell1StripeIdentity,
+                                    //     unsigned cell2StripeIdentity,
                                          VertexBasedCellPopulation<DIM>& rVertexCellPopulation);
   
 public:

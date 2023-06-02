@@ -251,15 +251,15 @@ void ExtrinsicPullModifier::UpdateAtEndOfTimeStep(AbstractCellPopulation<2,2>& r
     // std::cout << "PULL\n" << '\n';
     
     // Iterate over the rightmost nodes and pull them.
-   ////////////for (int i=0; i < (int)boundaryNodes.size(); i++) [ORIGINAL]
-   //////////// leftmost nodes:
+   
+   //////////// Need to change this to leftmost nodes???
    for (int i = 0; i < (int)boundaryNodes.size(); i++)
     {
       // If it lies between the top and bottom:
       if( i >= lowerNode && i <= upperNode)
       {
         Node<2>* p_node = rCellPopulation.GetNode(boundaryNodes[i]);
-        p_node->rGetModifiableLocation()[0] += mSpeed*dt;
+        p_node->rGetModifiableLocation()[0] -= mSpeed*dt; // was += but changed to -= to move to the left
         
         // Enfore a y flagpole condition
         // p_node->ClearAppliedForce();
