@@ -191,7 +191,7 @@ void ExtrinsicPullModifier::UpdateAtEndOfTimeStep(AbstractCellPopulation<2,2>& r
    double lowerX = bounds.rGetLowerCorner()[0];
    double lowerY = bounds.rGetLowerCorner()[1]; 
    
-   double upperX = bounds.rGetUpperCorner()[0];
+   double upperX =  lowerX; // bounds.rGetUpperCorner()[0];
     double upperY = bounds.rGetUpperCorner()[1];
     
     // Make variables to hold indices of nodes closest to bounding box.
