@@ -86,6 +86,11 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "SidekickBoundaryCondition.hpp"
 #include "ForceForScenario4.hpp"
 
+// for Voronoi mesh generator
+#include "VoronoiVertexMeshGenerator.hpp"
+#include "MutableVertexMesh.hpp"
+#include "Toroidal2dVertexMesh.hpp"
+#include "Warnings.hpp"
 
 
 static const double M_DT = 0.1;
@@ -116,9 +121,16 @@ public:
     void TestRunningMultiODECellWithEdgesAndInterior()
     {
         EXIT_IF_PARALLEL;
-        /* First we create a regular vertex mesh. */
-        HoneycombVertexMeshGenerator generator(6, 6);
-        MutableVertexMesh<2,2>* p_mesh = generator.GetMesh();
+        // /* First we create a regular vertex mesh. */
+        // HoneycombVertexMeshGenerator generator(6, 6);
+        // MutableVertexMesh<2,2>* p_mesh = generator.GetMesh();
+
+       #if BOOST_VERSION >= 105200
+
+        // Generate a mesh that is 20 cells wide, 12 high, with 4 Lloyd's relaxation steps and target average element area 1.23
+        VoronoiVertexMeshGenerator generator(20, 12, 4, 1.23);
+        MutableVertexMesh<2,2>* p_mesh_a = generator.GetMesh();
+        MutableVertexMesh<2,2>* p_mesh_b = generator.GetMeshAfterReMesh();
 
         std::vector<CellPtr> cells;
         MAKE_PTR(WildTypeCellMutationState, p_state);
@@ -233,9 +245,16 @@ public:
      */
     void TestRunningMultiODECellWithEdges()
     {
-        /* First we create a regular vertex mesh. */
-        HoneycombVertexMeshGenerator generator(6, 6);
-        MutableVertexMesh<2,2>* p_mesh = generator.GetMesh();
+        // /* First we create a regular vertex mesh. */
+        // HoneycombVertexMeshGenerator generator(6, 6);
+        // MutableVertexMesh<2,2>* p_mesh = generator.GetMesh();
+
+       #if BOOST_VERSION >= 105200
+
+        // Generate a mesh that is 20 cells wide, 12 high, with 4 Lloyd's relaxation steps and target average element area 1.23
+        VoronoiVertexMeshGenerator generator(20, 12, 4, 1.23);
+        MutableVertexMesh<2,2>* p_mesh_a = generator.GetMesh();
+        MutableVertexMesh<2,2>* p_mesh_b = generator.GetMeshAfterReMesh();
 
         std::vector<CellPtr> cells;
         MAKE_PTR(WildTypeCellMutationState, p_state);
