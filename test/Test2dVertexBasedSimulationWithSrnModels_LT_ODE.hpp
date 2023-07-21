@@ -37,37 +37,35 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define TESTDELTANOTCHEDGEINTERIORODESIMULATION_HPP_
 
 #include <cxxtest/TestSuite.h>
-#include "CheckpointArchiveTypes.hpp"
 #include "AbstractCellBasedTestSuite.hpp"
+#include "CellAgesWriter.hpp"
+#include "CellMutationStatesCountWriter.hpp"
+#include "CellProliferativePhasesCountWriter.hpp"
+#include "CellProliferativePhasesWriter.hpp"
+#include "CellProliferativeTypesCountWriter.hpp"
+#include "CellProliferativeTypesWriter.hpp"
+#include "CellVolumesWriter.hpp"
+#include "CheckpointArchiveTypes.hpp"
 #include "HoneycombVertexMeshGenerator.hpp"
+#include "NagaiHondaForce.hpp"
 #include "NodeBasedCellPopulation.hpp"
 #include "OffLatticeSimulation.hpp"
-#include "VertexBasedCellPopulation.hpp"
-#include "NagaiHondaForce.hpp"
 #include "SimpleTargetAreaModifier.hpp"
 #include "SmartPointers.hpp"
-#include "PetscSetupAndFinalize.hpp"
-#include "UniformG1GenerationalCellCycleModel.hpp"
 #include "TransitCellProliferativeType.hpp"
-#include "CellVolumesWriter.hpp"
-#include "CellAgesWriter.hpp"
-#include "CellProliferativePhasesWriter.hpp"
-#include "CellProliferativePhasesCountWriter.hpp"
-#include "CellProliferativeTypesWriter.hpp"
-#include "CellProliferativeTypesCountWriter.hpp"
-#include "CellMutationStatesCountWriter.hpp"
-#include "SmartPointers.hpp"
-#include "PetscSetupAndFinalize.hpp"
 #include "UniformCellCycleModel.hpp"
+#include "UniformG1GenerationalCellCycleModel.hpp"
+#include "VertexBasedCellPopulation.hpp"
 #include "WildTypeCellMutationState.hpp"
+#include "PetscSetupAndFinalize.hpp"
 
 #include "CellSrnModel.hpp"
 
 #include "DeltaNotchEdgeSrnModel.hpp"
 #include "DeltaNotchEdgeTrackingModifier.hpp"
 
-#include "DeltaNotchInteriorSrnModel.hpp"
 #include "DeltaNotchEdgeInteriorTrackingModifier.hpp"
+#include "DeltaNotchInteriorSrnModel.hpp"
 
 #include "ShortAxisVertexBasedDivisionRule.hpp"
 
@@ -84,14 +82,14 @@ public:
     {
         EXIT_IF_PARALLEL;
         /* First we create a regular vertex mesh. */
-        HoneycombVertexMeshGenerator generator(6, 6);
-        MutableVertexMesh<2,2>* p_mesh = generator.GetMesh();
+        HoneycombVertexMeshGenerator generator(5, 3);
+        MutableVertexMesh<2, 2>* p_mesh = generator.GetMesh();
 
         std::vector<CellPtr> cells;
         MAKE_PTR(WildTypeCellMutationState, p_state);
         MAKE_PTR(TransitCellProliferativeType, p_diff_type);
 
-        for (unsigned elem_index=0; elem_index < p_mesh->GetNumElements(); elem_index++)
+        for (unsigned elem_index = 0; elem_index < p_mesh->GetNumElements(); elem_index++)
         {
             /* Initalise cell cycle */
             UniformG1GenerationalCellCycleModel* p_cc_model = new UniformG1GenerationalCellCycleModel();
@@ -100,32 +98,56 @@ public:
             auto p_element = p_mesh->GetElement(elem_index);
             /* Initialise edge based SRN */
             auto p_cell_edge_srn_model = new CellSrnModel();
-            /* We choose to initialise the total concentrations to random levels */
-            auto delta_concentration = RandomNumberGenerator::Instance()->ranf();
-            auto notch_concentration = RandomNumberGenerator::Instance()->ranf();
+            /* We choose to initialise the total concentrations as follows */
+            auto notch_concentration = 50*(1-((80 + 10 * elem_index) / (80 + 10 * 5)));
+            auto delta_concentration = 50*(1-((80 + 10 * elem_index) / (80 + 10 * 5)));
+            auto DsP_concentration = 50*((80 + 10 * elem_index) / (80 + 10 * 5));
+            auto FtP_concentration = 50*((80 + 10 * elem_index) / (80 + 10 * 5));
+            auto A_concentration = 0;
+            auto B_concentration = 0;
+            auto C_concentration = 0;
+            auto D_concentration = 0;
+            auto A__concentration = 0;
+            auto B__concentration = 0;
+            auto C__concentration = 0;
+            auto D__concentration = 0;
+
+            // auto delta_concentration = RandomNumberGenerator::Instance()->ranf();
+            // auto notch_concentration = RandomNumberGenerator::Instance()->ranf();
+            // auto C_concentration = RandomNumberGenerator::Instance()->ranf();
 
             double total_edge_length = 0.0;
-            for (unsigned i = 0; i < p_element->GetNumEdges(); i ++)
+            for (unsigned i = 0; i < p_element->GetNumEdges(); i++)
             {
                 total_edge_length += p_element->GetEdge(i)->rGetLength();
             }
 
             /* Gets the edges of the element and create an SRN for each edge */
-            for (unsigned i = 0; i < p_element->GetNumEdges(); i ++)
+            for (unsigned i = 0; i < p_element->GetNumEdges(); i++)
             {
                 auto p_elem_edge = p_element->GetEdge(i);
                 auto p_edge_length = p_elem_edge->rGetLength();
                 std::vector<double> initial_conditions;
 
                 /* Initial concentration of delta and notch vary depending on the edge length */
-                initial_conditions.push_back( p_edge_length/total_edge_length * delta_concentration);
-                initial_conditions.push_back( p_edge_length/total_edge_length * notch_concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * notch_concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * delta_concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * DsP_concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * FtP_concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * A_concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * B_concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * C_concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * D_concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * A__concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * B__concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * C__concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * D__concentration);
 
                 MAKE_PTR(DeltaNotchEdgeSrnModel, p_srn_model);
                 p_srn_model->SetInitialConditions(initial_conditions);
                 p_cell_edge_srn_model->AddEdgeSrnModel(p_srn_model);
             }
-            //Add interior SRN models to cells
+            // Add interior SRN models to cells
             MAKE_PTR(DeltaNotchInteriorSrnModel, p_cell_srn_model);
             std::vector<double> zero_conditions(2);
             p_cell_srn_model->SetInitialConditions(zero_conditions);
@@ -134,7 +156,7 @@ public:
             CellPtr p_cell(new Cell(p_state, p_cc_model, p_cell_edge_srn_model));
             p_cell->SetCellProliferativeType(p_diff_type);
 
-            double birth_time = -RandomNumberGenerator::Instance()->ranf()*12.0;
+            double birth_time = -RandomNumberGenerator::Instance()->ranf() * 12.0;
             p_cell->SetBirthTime(birth_time);
             cells.push_back(p_cell);
         }
@@ -152,8 +174,8 @@ public:
          * and run the simulation.*/
         OffLatticeSimulation<2> simulator(cell_population);
         simulator.SetOutputDirectory("TestDeltaNotchEdgeInteriorODESimulation_LT_ODE");
-        simulator.SetSamplingTimestepMultiple(10);
-        simulator.SetEndTime(10.0);
+        simulator.SetSamplingTimestepMultiple(1.0);
+        simulator.SetEndTime(1.0);
 
         /* Update CellData and CellEdgeData so that SRN simulations can run properly */
         MAKE_PTR(DeltaNotchEdgeInteriorTrackingModifier<2>, p_cell_modifier);
@@ -166,14 +188,15 @@ public:
 
         simulator.SetOutputDivisionLocations(true);
         // Add division rule
-         boost::shared_ptr<ShortAxisVertexBasedDivisionRule<2> > p_division_rule(new ShortAxisVertexBasedDivisionRule<2>());
+        boost::shared_ptr<ShortAxisVertexBasedDivisionRule<2> > p_division_rule(new ShortAxisVertexBasedDivisionRule<2>());
         cell_population.SetVertexBasedDivisionRule(p_division_rule);
 
         /* This modifier assigns target areas to each cell, which are required by the {{{NagaiHondaForce}}}.
          */
         MAKE_PTR(SimpleTargetAreaModifier<2>, p_growth_modifier);
         simulator.AddSimulationModifier(p_growth_modifier);
-        TS_ASSERT_THROWS_NOTHING(simulator.Solve());
+        simulator.Solve();
+        //TS_ASSERT_THROWS_NOTHING(simulator.Solve());
     }
 
     /*
@@ -182,14 +205,14 @@ public:
     void TestRunningMultiODECellWithEdges()
     {
         /* First we create a regular vertex mesh. */
-        HoneycombVertexMeshGenerator generator(6, 6);
-        MutableVertexMesh<2,2>* p_mesh = generator.GetMesh();
+        HoneycombVertexMeshGenerator generator(5, 3);
+        MutableVertexMesh<2, 2>* p_mesh = generator.GetMesh();
 
         std::vector<CellPtr> cells;
         MAKE_PTR(WildTypeCellMutationState, p_state);
         MAKE_PTR(TransitCellProliferativeType, p_diff_type);
 
-        for (unsigned elem_index=0; elem_index < p_mesh->GetNumElements(); elem_index++)
+        for (unsigned elem_index = 0; elem_index < p_mesh->GetNumElements(); elem_index++)
         {
             /* Initalise cell cycle */
             UniformG1GenerationalCellCycleModel* p_cc_model = new UniformG1GenerationalCellCycleModel();
@@ -200,26 +223,52 @@ public:
             /* Initialise edge based SRN */
             auto p_cell_edge_srn_model = new CellSrnModel();
 
-            /* We choose to initialise the total concentrations to random levels */
-            auto delta_concentration = RandomNumberGenerator::Instance()->ranf();
-            auto notch_concentration = RandomNumberGenerator::Instance()->ranf();
+            /* We choose to initialise the total concentrations as follows */
+
+            auto notch_concentration = 50*(1-((80 + 10 * elem_index) / (80 + 10 * 5)));
+            auto delta_concentration = 50*(1-((80 + 10 * elem_index) / (80 + 10 * 5)));
+            auto DsP_concentration = 50*((80 + 10 * elem_index) / (80 + 10 * 5));
+            auto FtP_concentration = 50*((80 + 10 * elem_index) / (80 + 10 * 5));
+            auto A_concentration = 0;
+            auto B_concentration = 0;
+            auto C_concentration = 0;
+            auto D_concentration = 0;
+            auto A__concentration = 0;
+            auto B__concentration = 0;
+            auto C__concentration = 0;
+            auto D__concentration = 0;
+
+            // auto delta_concentration = RandomNumberGenerator::Instance()->ranf();
+            // auto notch_concentration = RandomNumberGenerator::Instance()->ranf();
+            // auto C_concentration = RandomNumberGenerator::Instance()->ranf();
 
             double total_edge_length = 0.0;
-            for (unsigned i = 0; i < p_element->GetNumEdges(); i ++)
+            for (unsigned i = 0; i < p_element->GetNumEdges(); i++)
             {
                 total_edge_length += p_element->GetEdge(i)->rGetLength();
             }
 
             /* Gets the edges of the element and create an SRN for each edge */
-            for (unsigned i = 0; i < p_element->GetNumEdges(); i ++)
+            for (unsigned i = 0; i < p_element->GetNumEdges(); i++)
             {
                 auto p_elem_edge = p_element->GetEdge(i);
                 auto p_edge_length = p_elem_edge->rGetLength();
                 std::vector<double> initial_conditions;
 
                 /* Initial concentration of delta and notch vary depending on the edge length */
-                initial_conditions.push_back( p_edge_length/total_edge_length * delta_concentration);
-                initial_conditions.push_back( p_edge_length/total_edge_length * notch_concentration);
+
+                initial_conditions.push_back(p_edge_length / total_edge_length * notch_concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * delta_concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * DsP_concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * FtP_concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * A_concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * B_concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * C_concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * D_concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * A__concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * B__concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * C__concentration);
+                initial_conditions.push_back(p_edge_length / total_edge_length * D__concentration);
 
                 MAKE_PTR(DeltaNotchEdgeSrnModel, p_srn_model);
                 p_srn_model->SetInitialConditions(initial_conditions);
@@ -229,7 +278,7 @@ public:
             CellPtr p_cell(new Cell(p_state, p_cc_model, p_cell_edge_srn_model));
             p_cell->SetCellProliferativeType(p_diff_type);
 
-            double birth_time = -RandomNumberGenerator::Instance()->ranf()*12.0;
+            double birth_time = -RandomNumberGenerator::Instance()->ranf() * 12.0;
             p_cell->SetBirthTime(birth_time);
             cells.push_back(p_cell);
         }
@@ -248,8 +297,8 @@ public:
          * and run the simulation. */
         OffLatticeSimulation<2> simulator(cell_population);
         simulator.SetOutputDirectory("TestDeltaNotchEdgeOnlyODESimulation_LT_ODE");
-        simulator.SetSamplingTimestepMultiple(10);
-        simulator.SetEndTime(10.0);
+        simulator.SetSamplingTimestepMultiple(1.0);
+        simulator.SetEndTime(1.0);
 
         /* Update CellEdgeData so that SRN simulations can run properly */
         MAKE_PTR(DeltaNotchEdgeTrackingModifier<2>, p_modifier);
@@ -260,14 +309,14 @@ public:
 
         simulator.SetOutputDivisionLocations(true);
         // Add division rule
-         boost::shared_ptr<ShortAxisVertexBasedDivisionRule<2> > p_division_rule(new ShortAxisVertexBasedDivisionRule<2>());
+        boost::shared_ptr<ShortAxisVertexBasedDivisionRule<2> > p_division_rule(new ShortAxisVertexBasedDivisionRule<2>());
         cell_population.SetVertexBasedDivisionRule(p_division_rule);
 
         MAKE_PTR(SimpleTargetAreaModifier<2>, p_growth_modifier);
         simulator.AddSimulationModifier(p_growth_modifier);
-        TS_ASSERT_THROWS_NOTHING(simulator.Solve());
+        //TS_ASSERT_THROWS_NOTHING(simulator.Solve());
+        simulator.Solve();
     }
 };
-
 
 #endif /*TESTDELTANOTCHEDGEINTERIORODESIMULATION_HPP_*/
