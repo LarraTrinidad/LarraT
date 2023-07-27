@@ -91,6 +91,7 @@ public:
 
         for (unsigned elem_index = 0; elem_index < p_mesh->GetNumElements(); elem_index++)
         {
+            
             /* Initalise cell cycle */
             UniformG1GenerationalCellCycleModel* p_cc_model = new UniformG1GenerationalCellCycleModel();
             p_cc_model->SetDimension(2);
@@ -98,11 +99,13 @@ public:
             auto p_element = p_mesh->GetElement(elem_index);
             /* Initialise edge based SRN */
             auto p_cell_edge_srn_model = new CellSrnModel();
+            auto centroid_x = p_mesh->GetCentroidOfElement(elem_index)[0];
+            auto centroid_y = p_mesh->GetCentroidOfElement(elem_index)[1];
             /* We choose to initialise the total concentrations as follows */
-            auto notch_concentration = 50*(1-((80 + 10 * elem_index) / (80 + 10 * 5)));
-            auto delta_concentration = 50*(1-((80 + 10 * elem_index) / (80 + 10 * 5)));
-            auto DsP_concentration = 50*((80 + 10 * elem_index) / (80 + 10 * 5));
-            auto FtP_concentration = 50*((80 + 10 * elem_index) / (80 + 10 * 5));
+            auto notch_concentration = 0;//-((5+centroid_x * centroid_x) * (5+(centroid_y -1.5) * (centroid_y -1.5))) +1.5+216; // 50*(1-((80 + 10 * centroid)/ (80 + 10 * 6)));
+            auto delta_concentration = 0;//-((5+centroid_x * centroid_x) * (5+(centroid_y -1.5) * (centroid_y -1.5))) +1.5+216; // 50*(1-((80 + 10 * elem_index)) / (80 + 10 * 3));
+            auto DsP_concentration = (5+centroid_x * centroid_x) * (5+(centroid_y -1.5) * (centroid_y -1.5)) - 1.5; //50*((80 + 10 * centroid) / (80 + 10 * 6));
+            auto FtP_concentration = (5+centroid_x * centroid_x) * (5+(centroid_y -1.5) * (centroid_y -1.5)) - 1.5; //50*((80 + 10 * centroid) / (80 + 10 * 6));
             auto A_concentration = 0;
             auto B_concentration = 0;
             auto C_concentration = 0;
@@ -111,7 +114,7 @@ public:
             auto B__concentration = 0;
             auto C__concentration = 0;
             auto D__concentration = 0;
-
+            
             // auto delta_concentration = RandomNumberGenerator::Instance()->ranf();
             // auto notch_concentration = RandomNumberGenerator::Instance()->ranf();
             // auto C_concentration = RandomNumberGenerator::Instance()->ranf();
@@ -174,8 +177,6 @@ public:
          * and run the simulation.*/
         OffLatticeSimulation<2> simulator(cell_population);
         simulator.SetOutputDirectory("TestDeltaNotchEdgeInteriorODESimulation_LT_ODE");
-        simulator.SetSamplingTimestepMultiple(1.0);
-        simulator.SetEndTime(1.0);
 
         /* Update CellData and CellEdgeData so that SRN simulations can run properly */
         MAKE_PTR(DeltaNotchEdgeInteriorTrackingModifier<2>, p_cell_modifier);
@@ -195,6 +196,12 @@ public:
          */
         MAKE_PTR(SimpleTargetAreaModifier<2>, p_growth_modifier);
         simulator.AddSimulationModifier(p_growth_modifier);
+
+        
+        simulator.SetSamplingTimestepMultiple(1.0);
+        //simulator.SetDt(0.1);
+        simulator.SetEndTime(1.0);
+
         simulator.Solve();
         //TS_ASSERT_THROWS_NOTHING(simulator.Solve());
     }
@@ -225,10 +232,10 @@ public:
 
             /* We choose to initialise the total concentrations as follows */
 
-            auto notch_concentration = 50*(1-((80 + 10 * elem_index) / (80 + 10 * 5)));
-            auto delta_concentration = 50*(1-((80 + 10 * elem_index) / (80 + 10 * 5)));
-            auto DsP_concentration = 50*((80 + 10 * elem_index) / (80 + 10 * 5));
-            auto FtP_concentration = 50*((80 + 10 * elem_index) / (80 + 10 * 5));
+            auto notch_concentration = 50*(1-((80 + 10 * elem_index) / (80 + 10 * 6)));
+            auto delta_concentration = 50*(1-((80 + 10 * elem_index) / (80 + 10 * 6)));
+            auto DsP_concentration =  50*((80 + 10 * elem_index) / (80 + 10 * 6));// [(6 + elem_index * elem_index) / (6+(elem_index-3)*(elem_index-3))]-3; 
+            auto FtP_concentration =  50*((80 + 10 * elem_index) / (80 + 10 * 6));// [(6 + elem_index * elem_index) / (6+(elem_index-3)*(elem_index-3))]-3;
             auto A_concentration = 0;
             auto B_concentration = 0;
             auto C_concentration = 0;
@@ -297,8 +304,8 @@ public:
          * and run the simulation. */
         OffLatticeSimulation<2> simulator(cell_population);
         simulator.SetOutputDirectory("TestDeltaNotchEdgeOnlyODESimulation_LT_ODE");
-        simulator.SetSamplingTimestepMultiple(1.0);
-        simulator.SetEndTime(1.0);
+        //simulator.SetSamplingTimestepMultiple(1.0);
+        //simulator.SetEndTime(1.0);
 
         /* Update CellEdgeData so that SRN simulations can run properly */
         MAKE_PTR(DeltaNotchEdgeTrackingModifier<2>, p_modifier);
@@ -315,6 +322,11 @@ public:
         MAKE_PTR(SimpleTargetAreaModifier<2>, p_growth_modifier);
         simulator.AddSimulationModifier(p_growth_modifier);
         //TS_ASSERT_THROWS_NOTHING(simulator.Solve());
+
+                
+        simulator.SetSamplingTimestepMultiple(1.0);
+        simulator.SetDt(0.1);
+        simulator.SetEndTime(1.0);
         simulator.Solve();
     }
 };
