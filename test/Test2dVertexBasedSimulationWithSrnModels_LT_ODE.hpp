@@ -101,7 +101,7 @@ public:
             auto p_cell_edge_srn_model = new CellSrnModel();
             auto centroid_x = p_mesh->GetCentroidOfElement(elem_index)[0];
             auto centroid_y = p_mesh->GetCentroidOfElement(elem_index)[1];
-            /* We choose to initialise the total concentrations as follows */
+            /* We choose to initialise the total concentrations of DsP and FtP to reflect a radial Fj gradient, and Ds and Ft to oppose it */
             auto notch_concentration = -((5+centroid_x * centroid_x) * (5+(centroid_y -1.5) * (centroid_y -1.5))) +1.5+216; // 50*(1-((80 + 10 * centroid)/ (80 + 10 * 6)));
             auto delta_concentration = -((5+centroid_x * centroid_x) * (5+(centroid_y -1.5) * (centroid_y -1.5))) +1.5+216; // 50*(1-((80 + 10 * elem_index)) / (80 + 10 * 3));
             auto DsP_concentration = (5+centroid_x * centroid_x) * (5+(centroid_y -1.5) * (centroid_y -1.5)) - 1.5; //50*((80 + 10 * centroid) / (80 + 10 * 6));
@@ -200,7 +200,7 @@ public:
         
         simulator.SetSamplingTimestepMultiple(1.0);
         //simulator.SetDt(0.1);
-        simulator.SetEndTime(1.0);
+        simulator.SetEndTime(1.0); // error when this is larger than 1.0
 
         simulator.Solve();
         //TS_ASSERT_THROWS_NOTHING(simulator.Solve());
@@ -230,7 +230,7 @@ public:
             /* Initialise edge based SRN */
             auto p_cell_edge_srn_model = new CellSrnModel();
 
-            /* We choose to initialise the total concentrations as follows */
+            /* We choose to initialise the total concentrations as in Eman's initial conditions */
 
             auto notch_concentration = 50*(1-((80 + 10 * elem_index) / (80 + 10 * 6)));
             auto delta_concentration = 50*(1-((80 + 10 * elem_index) / (80 + 10 * 6)));
