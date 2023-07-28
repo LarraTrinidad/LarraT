@@ -9,17 +9,6 @@
 
 #include "AbstractOdeSystem.hpp"
 
-/**
- * Represents the Delta-Notch ODE system described by Collier et al,
- * "Pattern formation by lateral inhibition with feedback: a mathematical
- * model of delta-notch intercellular signalling" (Journal of Theoretical
- * Biology 183:429-446, 1996).
- * Here, however, we include edge based model: Delta and Notch interactions between each cell
- * are modelled directly. We use similar ODE system as by Collier et al., except that we modify terms
- * corresponding to means of neighbour concentrations of Delta/Notch.
- * In this ODE model, concentration of edge Delta/Notch depend on intracellular (interior)
- * concentrations
- */
 class FtDsEdgeOdeSystem : public AbstractOdeSystem
 {
 private:
@@ -41,9 +30,10 @@ public:
     /**
      * Default constructor.
      *
-     * @param stateVariables optional initial conditions for state variables (only used in archiving)
+     * @param stateVariables optional initial conditions for state variables 
+     *     (only used in archiving)
      */
-    FtDsEdgeOdeSystem(std::vector<double> stateVariables=std::vector<double>());
+    FtDsEdgeOdeSystem(std::vector<double> stateVariables = std::vector<double>());
 
     /**
      * Destructor.
@@ -51,13 +41,16 @@ public:
     ~FtDsEdgeOdeSystem();
 
     /**
-     * Notch in this edge is inhibited by Delta in neighbouring edge. Cytoplasmic Notch is trafficked into
-     * this junction. The type of interactions of Delta and Notch in this edge are similar to interior SRN model
+     * Overridden EvaluateYDerivatives() method.
+     * 
      * @param time used to evaluate the RHS.
      * @param rY value of the solution vector used to evaluate the RHS.
-     * @param rDY filled in with the resulting derivatives (using  Collier et al. system of equations).
+     * @param rDY filled in with the resulting derivatives
      */
-    void EvaluateYDerivatives(double time, const std::vector<double>& rY, std::vector<double>& rDY);
+    void EvaluateYDerivatives(
+        double time,
+        const std::vector<double>& rY,
+        std::vector<double>& rDY) override;
 };
 
 // Declare identifier for the serializer

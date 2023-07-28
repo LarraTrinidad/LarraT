@@ -7,14 +7,6 @@
 #include "FtDsEdgeOdeSystem.hpp"
 #include "AbstractOdeSrnModel.hpp"
 
-/**
- * A subclass of AbstractOdeSrnModel that includes a Delta-Notch ODE system in the sub-cellular reaction network.
- * This SRN model represents a membrane/cortex of a single junction of a cell. This class of models can be used together
- * with FtDsInteriorSrn models. The ODE model used here is an attempt to use previous work (see FtDsSrnModel class)
- * for more detailed description of Delta-Notch interactions involving edge quantities (this or neighbour edge information) and
- * potentially coupling with cytoplasmic concentrations (FtDsInteriorSrn class).
- * \todo #2987 document this class more thoroughly here
- */
 class FtDsEdgeSrnModel : public AbstractOdeSrnModel
 {
 private:
@@ -36,14 +28,18 @@ private:
 protected:
 
     /**
-     * Protected copy-constructor for use by CreateSrnModel().  The only way for external code to create a copy of a SRN model
-     * is by calling that method, to ensure that a model of the correct subclass is created.
-     * This copy-constructor helps subclasses to ensure that all member variables are correctly copied when this happens.
+     * Protected copy-constructor for use by CreateSrnModel(). The only way for 
+     * external code to create a copy of a SRN model is by calling that method, 
+     * to ensure that a model of the correct subclass is created. This 
+     * copy-constructor helps subclasses to ensure that all member variables are 
+     * correctly copied when this happens.
      *
-     * This method is called by child classes to set member variables for a daughter cell upon cell division.
-     * Note that the parent SRN model will have had ResetForDivision() called just before CreateSrnModel() is called,
-     * so performing an exact copy of the parent is suitable behaviour. Any daughter-cell-specific initialisation
-     * can be done in InitialiseDaughterCell().
+     * This method is called by child classes to set member variables for a 
+     * daughter cell upon cell division. Note that the parent SRN model will 
+     * have had ResetForDivision() called just before CreateSrnModel() is 
+     * called, so performing an exact copy of the parent is suitable behaviour. 
+     * Any daughter-cell-specific initialisation can be done in 
+     * InitialiseDaughterCell().
      *
      * @param rModel  the SRN model to copy.
      */
@@ -54,9 +50,11 @@ public:
     /**
      * Default constructor calls base class.
      *
-     * @param pOdeSolver An optional pointer to a cell-cycle model ODE solver object (allows the use of different ODE solvers)
+     * @param pOdeSolver An optional pointer to a cell-cycle model ODE solver 
+     *     object (allows the use of different ODE solvers)
      */
-    FtDsEdgeSrnModel(boost::shared_ptr<AbstractCellCycleModelOdeSolver> pOdeSolver = boost::shared_ptr<AbstractCellCycleModelOdeSolver>());
+    FtDsEdgeSrnModel(
+        boost::shared_ptr<AbstractCellCycleModelOdeSolver> pOdeSolver = boost::shared_ptr<AbstractCellCycleModelOdeSolver>());
 
     /**
      * Overridden builder method to create new copies of this SRN model.
@@ -66,265 +64,197 @@ public:
     virtual AbstractSrnModel* CreateSrnModel() override;
 
     /**
-     * Initialise the SRN model at the start of a simulation.
-     *
-     * This overridden method sets up a new Delta-Notch ODE system.
+     * Overridden Initialise() method to initialise the SRN model at the start 
+     * of a simulation.
      */
     virtual void Initialise() override;
 
     /**
-     * This method is called when a new edge is created (e.g. after cell division or T1 swap)
+     * This method is called when a new edge is created (e.g. after cell 
+     * division or T1 swap)
      */
     virtual void InitialiseDaughterCell() override;
 
     /**
      * Overridden SimulateToTime() method for custom behaviour.
-     * Updates parameters (such as neighbour or interior Delta/Notch) and
-     * runs the simulation to current time
      */
     virtual void SimulateToCurrentTime() override;
 
     /**
-     * Update the levels of Delta and Notch of neighbouring edge sensed by this edge
-     * That is, fetch neighbour values from CellEdgeData object, storing the sensed information,
-     * into this model
+     * Update the protein concentrations at neighbouring edge sensed by this 
+     * edge; that is, fetch neighbour values from CellEdgeData object, storing 
+     * the sensed information, into this model.
      */
     void UpdateFtDs();
 
-    /**
-     * @return the current Notch level in this edge
-     */
-    double GetNotch();
+    /** @return the current Ds concentration at this edge. */
+    double GetDs();
 
     /**
-     * Set the notch level in this edge
+     * Set the Ds concentration at this edge.
+     * 
      * @param value
      */
-    void SetNotch(double value);
+    void SetDs(double value);
+
+    /** @return the current Ft concentration at this edge. */
+    double GetFt();
 
     /**
-     * @return the current Delta level in this edge.
-     */
-    double GetDelta();
-
-    /**
-     * Set the delta level in this edge
+     * Set the Ft concentration at this edge.
+     * 
      * @param value
      */
-    void SetDelta(double value);
+    void SetFt(double value);
+
+    /** @return the current DsP concentration at this edge. */
+    double GetDsP();
 
     /**
-     * @return the current level of Delta in the neighbouring cell's edge.
-     */
-
-
-        double GetDsP();
-
-    /**
-     * Set the DsP (phosphorylated Ds) level in this edge
+     * Set the DsP concentration at this edge.
+     * 
      * @param value
      */
     void SetDsP(double value);
 
-    /**
-     * @return the current level of DsP (phosphorylated Ds) in the neighbouring cell's edge.
-     */
-    
-
+    /** @return the current FtP concentration at this edge. */
     double GetFtP();
 
     /**
-     * Set the FtP (phosphorylated Ft) level in this edge
+     * Set the FtP concentration at this edge.
+     * 
      * @param value
      */
     void SetFtP(double value);
 
-    /**
-     * @return the current level of FtP (phosphorylated Ft) in the neighbouring cell's edge.
-     */
-
-
+    /** @return the current complex A concentration at this edge. */
     double GetA();
 
     /**
-     * Set the A (complex A) level in this edge
+     * Set the complex A concentration at this edge.
+     * 
      * @param value
      */
     void SetA(double value);
 
-    /**
-     * @return the current level of A (complex A) in the neighbouring cell's edge.
-     */
-
+    /** @return the current complex B concentration at this edge. */
     double GetB();
 
     /**
-     * Set the B (complex B) level in this edge
+     * Set the complex B concentration at this edge.
+     * 
      * @param value
      */
     void SetB(double value);
 
-    /**
-     * @return the current level of B (complex B) in the neighbouring cell's edge.
-     */
-
-
+    /** @return the current complex C concentration at this edge. */
     double GetC();
 
     /**
-     * Set the C (complex C) level in this edge
+     * Set the complex C concentration at this edge.
+     * 
      * @param value
      */
-
     void SetC(double value);
 
-    /**
-     * @return the current level of C (complex C) in the neighbouring cell's edge.
-     */
-
-
+    /** @return the current complex D concentration at this edge. */
    double GetD();
 
     /**
-     * Set the D (complex D) level in this edge
+     * Set the complex D concentration at this edge.
+     * 
      * @param value
      */
     void SetD(double value);
 
     /**
-     * @return the current level of D (complex D) in the neighbouring cell's edge.
+     * @return the current complex A concentration at the neighbouring cell's 
+     *     edge.
      */
-
-
-
-
-    double GetA_();
+    double GetNeighA();
 
     /**
-     * Set the A_ (complex A_) level in this edge
+     * Set the complex A concentration at the neighbouring cell's edge.
+     * 
      * @param value
      */
-    void SetA_(double value);
+    void SetNeighA(double value);
 
     /**
-     * @return the current level of A_ (complex A_) in the neighbouring cell's edge.
+     * @return the current complex B concentration at the neighbouring cell's 
+     *     edge.
      */
-
-    double GetB_();
+    double GetNeighB();
 
     /**
-     * Set the B_ (complex B_) level in this edge
+     * Set the complex B concentration at the neighbouring cell's edge.
+     * 
      * @param value
      */
-    void SetB_(double value);
+    void SetNeighB(double value);
 
     /**
-     * @return the current level of B_ (complex B_) in the neighbouring cell's edge.
+     * @return the current complex C concentration at the neighbouring cell's 
+     *     edge.
      */
-
-    
-    double GetC_();
+    double GetNeighC();
 
     /**
-     * Set the C_ (complex C_) level in this edge
+     * Set the complex C concentration at the neighbouring cell's edge.
+     * 
      * @param value
      */
-
-    void SetC_(double value);
+    void SetNeighC(double value);
 
     /**
-     * @return the current level of C_ (complex C_) in the neighbouring cell's edge.
+     * @return the current complex D concentration at the neighbouring cell's 
+     *     edge.
      */
-
-
-   double GetD_();
+   double GetNeighD();
 
     /**
-     * Set the D_ (complex D_) level in this edge
+     * Set the complex D concentration at the neighbouring cell's edge.
+     * 
      * @param value
      */
-    void SetD_(double value);
+    void SetNeighD(double value);
 
     /**
-     * @return the current level of D_ (complex D_) in the neighbouring cell's edge.
-     */
-
-
-
-
-
-    double GetNeighbouringDelta() const;
-
-    /**
-     * The value of interior Delta is stored as parameters in this model, which is
-     * retrieved by this method
-     * @return the level of Delta in cell interior
-     */
-
-
-
-    double GetNeighbouringDsP() const;
-
-    /**
-     * The value of interior DsP is stored as parameters in this model, which is
-     * retrieved by this method
-     * @return the level of DsP in cell interior
-     */
-
-    double GetNeighbouringFtP() const;
-
-    /**
-     * The value of interior FtP is stored as parameters in this model, which is
-     * retrieved by this method
-     * @return the level of FtP in cell interior
-     */
-
-    double GetInteriorDelta() const;
-
-    /**
-     * The value of interior Notch is stored as parameters in this model, which is
-     * retrieved by this method
-     * @return the level of Notch in cell interior
-     */
-    double GetInteriorNotch() const;
-
-    /**
-     * Output SRN model parameters to file.
+     * Overridden OutputSrnModelParameters() method.
      *
      * @param rParamsFile the file stream to which the parameters are output
      */
     virtual void OutputSrnModelParameters(out_stream& rParamsFile) override;
 
     /**
-     * Adds Delta/Notch from the input srn model to this model.
-     * Override the method declared in AbstractSrnModel class
-     * @param p_other_srn
+     * Overridden AddSrnQuantities() method.
+     *
+     * @param pOtherSrn
      * @param scale
      */
-    virtual void AddSrnQuantities(AbstractSrnModel *p_other_srn,
+    virtual void AddSrnQuantities(AbstractSrnModel* pOtherSrn,
                                   const double scale = 1.0) override;
 
     /**
-     * Here we assume that when a neighbouring junctions shrinks, 25% of its Delta/Notch
-     * concentration is added to this edge
-     * Override the method declared in AbstractSrnModel class
-     * @param p_shrunk_edge_srn
+     * Overridden AddShrunkEdgeSrn() method.
+     * 
+     * @param pShrunkEdgeSrn
      */
-    virtual void AddShrunkEdgeSrn(AbstractSrnModel *p_shrunk_edge_srn) override;
+    virtual void AddShrunkEdgeSrn(AbstractSrnModel* pShrunkEdgeSrn) override;
 
     /**
-     * Here we add Delta/Notch when junctions merge via common vertex deletion
-     * Override the method declared in AbstractSrnModel class
-     * @param p_merged_edge_srn
+     * Overridden AddMergedEdgeSrn() method.
+     * 
+     * @param pMergedEdgeSrn
      */
-    virtual void AddMergedEdgeSrn(AbstractSrnModel* p_merged_edge_srn) override;
+    virtual void AddMergedEdgeSrn(AbstractSrnModel* pMergedEdgeSrn) override;
 
     /**
-     * By default, Edge concentrations are split according to relative lengths, when an edge is split.
-     * Override the method declared in AbstractSrnModel class
-     * @param relative_position
+     * Overridden SplitEdgeSrn() method.
+     * 
+     * @param relativePosition
      */
-    virtual void SplitEdgeSrn(const double relative_position) override;
+    virtual void SplitEdgeSrn(const double relativePosition) override;
 };
 
 typedef boost::shared_ptr<FtDsEdgeSrnModel> FtDsEdgeSrnModelPtr;

@@ -1,6 +1,7 @@
 #include "FtDsEdgeSrnModel.hpp"
 
-FtDsEdgeSrnModel::FtDsEdgeSrnModel(boost::shared_ptr<AbstractCellCycleModelOdeSolver> pOdeSolver)
+FtDsEdgeSrnModel::FtDsEdgeSrnModel(
+    boost::shared_ptr<AbstractCellCycleModelOdeSolver> pOdeSolver)
     : AbstractOdeSrnModel(12, pOdeSolver)
 {
     if (mpOdeSolver == boost::shared_ptr<AbstractCellCycleModelOdeSolver>())
@@ -22,15 +23,15 @@ FtDsEdgeSrnModel::FtDsEdgeSrnModel(const FtDsEdgeSrnModel& rModel)
     : AbstractOdeSrnModel(rModel)
 {
     /*
-     * Set each member variable of the new SRN model that inherits
-     * its value from the parent.
+     * Set each member variable of the new SRN model that inherits its value 
+     * from the parent.
      *
-     * Note 1: some of the new SRN model's member variables
-     * will already have been correctly initialized in its constructor.
+     * Note 1: some of the new SRN model's member variables will already have 
+     * been correctly initialized in its constructor.
      *
-     * Note 2: one or more of the new SRN model's member variables
-     * may be set/overwritten as soon as InitialiseDaughterCell() is called on
-     * the new SRN model.
+     * Note 2: one or more of the new SRN model's member variables may be set/
+     * overwritten as soon as InitialiseDaughterCell() is called on the new SRN 
+     * model.
      *
      * Note 3: Only set the variables defined in this class. Variables defined
      * in parent classes will be defined there.
@@ -38,8 +39,10 @@ FtDsEdgeSrnModel::FtDsEdgeSrnModel(const FtDsEdgeSrnModel& rModel)
     assert(rModel.GetOdeSystem());
     AbstractOdeSystem* p_parent_system(rModel.GetOdeSystem());
     SetOdeSystem(new FtDsEdgeOdeSystem(p_parent_system->rGetStateVariables()));
-    for (unsigned int i=0; i < p_parent_system->GetNumberOfParameters(); ++i)
+    for (unsigned i = 0; i < p_parent_system->GetNumberOfParameters(); ++i)
+    {
         mpOdeSystem->SetParameter(i, p_parent_system->GetParameter(i));
+    }
 }
 
 AbstractSrnModel* FtDsEdgeSrnModel::CreateSrnModel()
@@ -51,6 +54,7 @@ void FtDsEdgeSrnModel::SimulateToCurrentTime()
 {
     // Update information before running simulation
     UpdateFtDs();
+
     // Run the ODE simulation as needed
     AbstractOdeSrnModel::SimulateToCurrentTime();
 }
@@ -65,76 +69,71 @@ void FtDsEdgeSrnModel::InitialiseDaughterCell()
     assert(mpOdeSystem != nullptr);
     assert(mpCell != nullptr);
 
+    // A new edge is initialised with zero concentrations
+    mpOdeSystem->SetStateVariable("Ds", 0.0);
+    mpOdeSystem->SetStateVariable("Ft", 0.0);
+    mpOdeSystem->SetStateVariable("DsP", 0.0);
+    mpOdeSystem->SetStateVariable("FtP", 0.0);
+    mpOdeSystem->SetStateVariable("A", 0.0);
+    mpOdeSystem->SetStateVariable("B", 0.0);
+    mpOdeSystem->SetStateVariable("C", 0.0);
+    mpOdeSystem->SetStateVariable("D", 0.0);
+    mpOdeSystem->SetStateVariable("neigh_A", 0.0);
+    mpOdeSystem->SetStateVariable("neigh_B", 0.0);
+    mpOdeSystem->SetStateVariable("neigh_C", 0.0);
+    mpOdeSystem->SetStateVariable("neigh_D", 0.0);
 
-    //A new edge is initialised with zero concentrations
-    mpOdeSystem->SetStateVariable("Notch",0.0);
-    mpOdeSystem->SetStateVariable("Delta",0.0);
-    mpOdeSystem->SetStateVariable("DsP",0.0);
-    mpOdeSystem->SetStateVariable("FtP",0.0);
-    mpOdeSystem->SetStateVariable("A",0.0);
-    mpOdeSystem->SetStateVariable("B",0.0);
-    mpOdeSystem->SetStateVariable("C",0.0);
-    mpOdeSystem->SetStateVariable("D",0.0);
-    mpOdeSystem->SetStateVariable("A_",0.0);
-    mpOdeSystem->SetStateVariable("B_",0.0);
-    mpOdeSystem->SetStateVariable("C_",0.0);
-    mpOdeSystem->SetStateVariable("D_",0.0);
-   
-
-    mpOdeSystem->SetParameter("neighbour notch",0.0);
-    mpOdeSystem->SetParameter("neighbour delta",0.0);
-    mpOdeSystem->SetParameter("neighbour DsP",0.0);
-    mpOdeSystem->SetParameter("neighbour FtP",0.0);
-
+    mpOdeSystem->SetParameter("neighbour Ds", 0.0);
+    mpOdeSystem->SetParameter("neighbour Ft", 0.0);
+    mpOdeSystem->SetParameter("neighbour DsP", 0.0);
+    mpOdeSystem->SetParameter("neighbour FtP", 0.0);
 }
-
 
 void FtDsEdgeSrnModel::UpdateFtDs()
 {
     assert(mpOdeSystem != nullptr);
     assert(mpCell != nullptr);
 
-    double neigh_delta
-    = mpCell->GetCellEdgeData()->GetItem("neighbour delta")[this->GetEdgeLocalIndex()];
-    mpOdeSystem->SetParameter("neighbour delta", neigh_delta);
+    auto p_data = mpCell->GetCellEdgeData();
 
-   // double interior_delta = mpCell->GetCellData()->GetItem("interior delta");
-   // mpOdeSystem->SetParameter("interior delta", interior_delta);
+    double neigh_Ds = p_data->GetItem("neighbour Ds")[this->GetEdgeLocalIndex()];
+    mpOdeSystem->SetParameter("neighbour Ds", neigh_Ds);
 
-   // double interior_notch = mpCell->GetCellData()->GetItem("interior notch");
-    //mpOdeSystem->SetParameter("interior notch", interior_notch);
+    double neigh_Ft = p_data->GetItem("neighbour Ft")[this->GetEdgeLocalIndex()];
+    mpOdeSystem->SetParameter("neighbour Ft", neigh_Ft);
 
+    double neigh_DsP = p_data->GetItem("neighbour DsP")[this->GetEdgeLocalIndex()];
+    mpOdeSystem->SetParameter("neighbour DsP", neigh_DsP);
+
+    double neigh_FtP = p_data->GetItem("neighbour FtP")[this->GetEdgeLocalIndex()];
+    mpOdeSystem->SetParameter("neighbour FtP", neigh_FtP);
 }
 
-
-double FtDsEdgeSrnModel::GetNotch()
+double FtDsEdgeSrnModel::GetDs()
 {
     assert(mpOdeSystem != nullptr);
-    double notch = mpOdeSystem->rGetStateVariables()[0];
-    return notch;
+    double Ds = mpOdeSystem->rGetStateVariables()[0];
+    return Ds;
 }
 
-void FtDsEdgeSrnModel::SetNotch(double value)
+void FtDsEdgeSrnModel::SetDs(double value)
 {
     assert(mpOdeSystem != nullptr);
     mpOdeSystem->rGetStateVariables()[0] = value;
 }
 
-
-double FtDsEdgeSrnModel::GetDelta()
+double FtDsEdgeSrnModel::GetFt()
 {
     assert(mpOdeSystem != nullptr);
-    double delta = mpOdeSystem->rGetStateVariables()[1];
-    return delta;
+    double Ft = mpOdeSystem->rGetStateVariables()[1];
+    return Ft;
 }
 
-void FtDsEdgeSrnModel::SetDelta(double value)
+void FtDsEdgeSrnModel::SetFt(double value)
 {
     assert(mpOdeSystem != nullptr);
     mpOdeSystem->rGetStateVariables()[1] = value;
 }
-
-
 
 double FtDsEdgeSrnModel::GetDsP()
 {
@@ -214,166 +213,131 @@ void FtDsEdgeSrnModel::SetD(double value)
     mpOdeSystem->rGetStateVariables()[7] = value;
 }
 
-
-double FtDsEdgeSrnModel::GetA_()
+double FtDsEdgeSrnModel::GetNeighA()
 {
     assert(mpOdeSystem != nullptr);
-    double A_ = mpOdeSystem->rGetStateVariables()[8];
-    return A_;
+    double neigh_A = mpOdeSystem->rGetStateVariables()[8];
+    return neigh_A;
 }
 
-void FtDsEdgeSrnModel::SetA_(double value)
+void FtDsEdgeSrnModel::SetNeighA(double value)
 {
     assert(mpOdeSystem != nullptr);
     mpOdeSystem->rGetStateVariables()[8] = value;
 }
 
-double FtDsEdgeSrnModel::GetB_()
+double FtDsEdgeSrnModel::GetNeighB()
 {
     assert(mpOdeSystem != nullptr);
-    double B_ = mpOdeSystem->rGetStateVariables()[9];
-    return B_;
+    double neigh_B = mpOdeSystem->rGetStateVariables()[9];
+    return neigh_B;
 }
 
-void FtDsEdgeSrnModel::SetB_(double value)
+void FtDsEdgeSrnModel::SetNeighB(double value)
 {
     assert(mpOdeSystem != nullptr);
     mpOdeSystem->rGetStateVariables()[9] = value;
 }
 
-double FtDsEdgeSrnModel::GetC_()
+double FtDsEdgeSrnModel::GetNeighC()
 {
     assert(mpOdeSystem != nullptr);
-    double C_ = mpOdeSystem->rGetStateVariables()[10];
-    return C_;
+    double neigh_C = mpOdeSystem->rGetStateVariables()[10];
+    return neigh_C;
 }
 
-void FtDsEdgeSrnModel::SetC_(double value)
+void FtDsEdgeSrnModel::SetNeighC(double value)
 {
     assert(mpOdeSystem != nullptr);
     mpOdeSystem->rGetStateVariables()[10] = value;
 }
 
-double FtDsEdgeSrnModel::GetD_()
+double FtDsEdgeSrnModel::GetNeighD()
 {
     assert(mpOdeSystem != nullptr);
-    double D_ = mpOdeSystem->rGetStateVariables()[11];
-    return D_;
+    double neigh_D = mpOdeSystem->rGetStateVariables()[11];
+    return neigh_D;
 }
 
-void FtDsEdgeSrnModel::SetD_(double value)
+void FtDsEdgeSrnModel::SetNeighD(double value)
 {
     assert(mpOdeSystem != nullptr);
     mpOdeSystem->rGetStateVariables()[11] = value;
 }
 
-
-double FtDsEdgeSrnModel::GetNeighbouringDelta() const
-{
-    assert(mpOdeSystem != nullptr);
-    return mpOdeSystem->GetParameter("neighbour delta");
-}
-
-
-
-
-double FtDsEdgeSrnModel::GetNeighbouringDsP() const
-{
-    assert(mpOdeSystem != nullptr);
-    return mpOdeSystem->GetParameter("neighbour DsP");
-}
-
-double FtDsEdgeSrnModel::GetNeighbouringFtP() const
-{
-    assert(mpOdeSystem != nullptr);
-    return mpOdeSystem->GetParameter("neighbour FtP");
-}
-
-
-double FtDsEdgeSrnModel::GetInteriorDelta() const
-{
-    assert(mpOdeSystem != nullptr);
-    return mpOdeSystem->GetParameter("interior delta");
-}
-
-double FtDsEdgeSrnModel::GetInteriorNotch() const
-{
-    assert(mpOdeSystem != nullptr);
-    return mpOdeSystem->GetParameter("interior notch");
-}
-
-
 void FtDsEdgeSrnModel::OutputSrnModelParameters(out_stream& rParamsFile)
 {
-    // No new parameters to output, so just call method on direct parent class
     AbstractOdeSrnModel::OutputSrnModelParameters(rParamsFile);
 }
 
-void FtDsEdgeSrnModel::AddSrnQuantities(AbstractSrnModel *p_other_srn,
-                                              const double scale)
+void FtDsEdgeSrnModel::AddSrnQuantities(
+    AbstractSrnModel* pOtherSrn,
+    const double scale)
 {
-    auto other_srn = static_cast<FtDsEdgeSrnModel*>(p_other_srn);
-    const double other_delta = other_srn->GetDelta();
-    const double other_notch = other_srn->GetNotch();
-    const double other_DsP = other_srn->GetDsP();
-    const double other_FtP = other_srn->GetFtP();
-    const double other_A = other_srn->GetA();
-    const double other_B = other_srn->GetB();
-    const double other_C = other_srn->GetC();
-    const double other_D = other_srn->GetD();
-    const double other_A_ = other_srn->GetA_();
-    const double other_B_ = other_srn->GetB_();
-    const double other_C_ = other_srn->GetC_();
-    const double other_D_ = other_srn->GetD_();
+    auto p_other_srn = static_cast<FtDsEdgeSrnModel*>(pOtherSrn);
 
+    const double other_Ds = p_other_srn->GetDs();
+    const double other_Ft = p_other_srn->GetFt();
+    const double other_DsP = p_other_srn->GetDsP();
+    const double other_FtP = p_other_srn->GetFtP();
+    const double other_A = p_other_srn->GetA();
+    const double other_B = p_other_srn->GetB();
+    const double other_C = p_other_srn->GetC();
+    const double other_D = p_other_srn->GetD();
+    const double other_neigh_A = p_other_srn->GetNeighA();
+    const double other_neigh_B = p_other_srn->GetNeighB();
+    const double other_neigh_C = p_other_srn->GetNeighC();
+    const double other_neigh_D = p_other_srn->GetNeighD();
 
-    const double this_delta = GetDelta();
-    const double this_notch = GetNotch();
+    const double this_Ds = GetDs();
+    const double this_Ft = GetFt();
     const double this_DsP = GetDsP();
     const double this_FtP = GetFtP();
     const double this_A = GetA();
     const double this_B = GetB();
     const double this_C = GetC();
     const double this_D = GetD();
-    const double this_A_ = GetA_();
-    const double this_B_ = GetB_();
-    const double this_C_ = GetC_();
-    const double this_D_ = GetD_();
+    const double this_neigh_A = GetNeighA();
+    const double this_neigh_B = GetNeighB();
+    const double this_neigh_C = GetNeighC();
+    const double this_neigh_D = GetNeighD();
 
-    SetDelta(this_delta+scale*other_delta);
-    SetNotch(this_notch+scale*other_notch);
-    SetDsP(this_DsP+scale*other_DsP);
-    SetFtP(this_FtP+scale*other_FtP);
-    SetA(this_A+scale*other_A);
-    SetB(this_B+scale*other_B);
-    SetC(this_C+scale*other_C);
-    SetD(this_D+scale*other_D);
-    SetA(this_A_+scale*other_A_);
-    SetB(this_B_+scale*other_B_);
-    SetC(this_C_+scale*other_C_);
-    SetD(this_D_+scale*other_D_);
+    ///\todo This is unclear
+    SetDs(this_Ds + scale*other_Ds);
+    SetFt(this_Ft + scale*other_Ft);
+    SetDsP(this_DsP + scale*other_DsP);
+    SetFtP(this_FtP + scale*other_FtP);
+    SetA(this_A + scale*other_A);
+    SetB(this_B + scale*other_B);
+    SetC(this_C + scale*other_C);
+    SetD(this_D + scale*other_D);
+    SetA(this_neigh_A + scale*other_neigh_A);
+    SetB(this_neigh_B + scale*other_neigh_B);
+    SetC(this_neigh_C + scale*other_neigh_C);
+    SetD(this_neigh_D + scale*other_neigh_D);
 }
 
-
-void FtDsEdgeSrnModel::AddShrunkEdgeSrn(AbstractSrnModel *p_shrunk_edge_srn)
+void FtDsEdgeSrnModel::AddShrunkEdgeSrn(AbstractSrnModel* pShrunkEdgeSrn)
 {
-    // Here we assume that one half of srn quantities are endocytosed and the remaining
-    // half are split between neighbouring junctions. Hence we add 1/4 of srn variables
-    AddSrnQuantities(p_shrunk_edge_srn, 0.25);
+    /*
+     * Here we assume that one half of SRN quantities are endocytosed and the 
+     * remaining half are split between neighbouring junctions. Hence we add 
+     * 1/4 of SRN variables.
+     */
+    AddSrnQuantities(pShrunkEdgeSrn, 0.25);
 }
 
-void FtDsEdgeSrnModel::AddMergedEdgeSrn(AbstractSrnModel* p_merged_edge_srn)
+void FtDsEdgeSrnModel::AddMergedEdgeSrn(AbstractSrnModel* pMergedEdgeSrn)
 {
     // Add all srn variables to this edge srn
-    AddSrnQuantities(p_merged_edge_srn);
+    AddSrnQuantities(pMergedEdgeSrn);
 }
 
-void FtDsEdgeSrnModel::SplitEdgeSrn(const double relative_position)
+void FtDsEdgeSrnModel::SplitEdgeSrn(const double relativePosition)
 {
-    //Edges with longer relative lengths after split have higher concentration
-    ScaleSrnVariables(relative_position);
+    // Edges with longer relative lengths after split have higher concentration
+    ScaleSrnVariables(relativePosition);
 }
-
 
 // Declare identifier for the serializer
 #include "SerializationExportWrapperForCpp.hpp"

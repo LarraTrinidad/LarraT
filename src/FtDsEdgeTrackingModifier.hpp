@@ -58,11 +58,7 @@ public:
     virtual void SetupSolve(AbstractCellPopulation<DIM,DIM>& rCellPopulation, std::string outputDirectory);
 
     /**
-     * Helper method to compute the mean level of Delta in each cell's neighbours and store these in the CellData.
-     *
-     * Note: If using a CaBasedCellPopulation, we assume a Moore neighbourhood and unit carrying capacity.
-     * If a cell has no neighbours (such as an isolated cell in a CaBasedCellPopulation), we store the
-     * value -1 in the CellData.
+     * Helper method.
      *
      * @param rCellPopulation reference to the cell population
      */

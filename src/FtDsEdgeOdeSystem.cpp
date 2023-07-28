@@ -9,42 +9,34 @@ FtDsEdgeOdeSystem::FtDsEdgeOdeSystem(std::vector<double> stateVariables)
     /**
      * The state variables are as follows:
      *
-     * 0 - Notch concentration for this cell edge (Ds)
-     * 1 - Delta concentration for this cell edge (Ft)
+     * 0 - Ds
+     * 1 - Ft
      * 2 - DsP
      * 3 - FtP
      * 4 - complex A (FtP-neigh_Ds)
      * 5 - complex B (FtP-neigh_DsP)
      * 6 - complex C (Ft-neigh_Ds)
      * 7 - complex D (Ft-neigh_DsP)
-     * 8 - complex A_ (neigh_FtP-Ds)
-     * 9 - complex B_ (DsP-neigh_FtP)
-     * 10 - complex C_ (neigh_Ft-Ds)
-     * 11 - complex D_ (neigh_Ft-DsP)
+     * 8 - complex neigh_A (neigh_FtP-Ds)
+     * 9 - complex neigh_B (DsP-neigh_FtP)
+     * 10 - complex neigh_C (neigh_Ft-Ds)
+     * 11 - complex neigh_D (neigh_Ft-DsP)
      *
      * We store the last state variable so that it can be written
      * to file at each time step alongside the others, and visualized.
+     * 
+     * The following initial condition is soon overwritten.
      */
+    for (unsigned i = 0; i < 12; i++)
+    {
+        double value = (i < 3) ? 0.1 : 0.0;
+        SetDefaultInitialCondition(i, value);
+    }
 
-    SetDefaultInitialCondition(0, 0.1); // soon overwritten
-    SetDefaultInitialCondition(1, 0.1); // soon overwritten
-    SetDefaultInitialCondition(2, 0.1); // soon overwritten
-    SetDefaultInitialCondition(3, 0.0); // soon overwritten
-    SetDefaultInitialCondition(4, 0.0); // soon overwritten
-    SetDefaultInitialCondition(5, 0.0); // soon overwritten
-    SetDefaultInitialCondition(6, 0.0); // soon overwritten
-    SetDefaultInitialCondition(7, 0.0); // soon overwritten
-    SetDefaultInitialCondition(8, 0.0); // soon overwritten
-    SetDefaultInitialCondition(9, 0.0); // soon overwritten
-    SetDefaultInitialCondition(10, 0.0); // soon overwritten
-    SetDefaultInitialCondition(11, 0.0); // soon overwritten
-
-    this->mParameters.push_back(0.0);
-    //By default zero. If no interior SRN model is specified, interior delta/notch is zero
-    this->mParameters.push_back(0.0);
-    this->mParameters.push_back(0.0);
-    this->mParameters.push_back(0.0);
-
+    for (unsigned i = 0; i < 4; i++)
+    {
+        this->mParameters.push_back(0.0);
+    }
 
     if (stateVariables != std::vector<double>())
     {
@@ -54,141 +46,133 @@ FtDsEdgeOdeSystem::FtDsEdgeOdeSystem(std::vector<double> stateVariables)
 
 FtDsEdgeOdeSystem::~FtDsEdgeOdeSystem()
 {
-
 }
 
-
-
-void FtDsEdgeOdeSystem::EvaluateYDerivatives(double time, const std::vector<double>& rY, std::vector<double>& rDY)
+void FtDsEdgeOdeSystem::EvaluateYDerivatives(
+    double time,
+    const std::vector<double>& rY,
+    std::vector<double>& rDY)
 {
+    /*
+     * Using the model in Hale et al. (2015), there are four different proteins:
+     * unphosphorylated Ft (Ft); phosphorylated Ft (FtP); unphosphorylated Ds 
+     * (Ds); and phosphorylated Ds (DsP). These can then form four different 
+     * complexes: FtP-Ds (A); FtP-DsP (B); Ft-Ds (C); and Ft-DsP (D). Since Fj 
+     * appears to have a more dominant effect to Ft, the binding strengths are 
+     * A > B > C = D so the association constants for kon/koff can be given as 
+     * 1, 1/2, 1/4, and 1/4, respectively.
+     */
 
-
-    /** Using the model in Hale et al. (2015) - there are four different proteins:
-   unphosphorylated Ft (Ft), phosphorylated Ds (Ds), unphosphorylated Ds (Ds), and phosphorylated Ds (DsP)
-   which could then form four differnt complexes:
-   FtP-Ds (A), FtP-DsP (B), Ft-Ds (C), and Ft-DsP (D)
-   Since Fj appears to have a more dominant effect to Ft, the binding strengths are A > B > C = D
-   so the association constants for kon/koff can be given as 1, 1/2, 1/4, and 1/4, respectively.
-   */
-
-
-    const double notch = rY[0];
-    const double delta = rY[1];
+    const double Ds = rY[0];
+    const double Ft = rY[1];
     const double DsP = rY[2];
     const double FtP = rY[3];
     const double A = rY[4];
     const double B = rY[5];
     const double C = rY[6];
     const double D = rY[7];
-    const double A_ = rY[8];
-    const double B_ = rY[9];
-    const double C_ = rY[10];
-    const double D_ = rY[11];
-    
+    const double neigh_A = rY[8];
+    const double neigh_B = rY[9];
+    const double neigh_C = rY[10];
+    const double neigh_D = rY[11];
 
-    const double neigh_delta = this->mParameters[0]; // Shorthand for "this->mParameter("neighbor delta");"
-    const double neigh_notch = this->mParameters[1];
+    const double neigh_Ds = this->mParameters[0];
+    const double neigh_Ft = this->mParameters[1];
     const double neigh_DsP = this->mParameters[2];
     const double neigh_FtP = this->mParameters[3];
 
-    //const double interior_delta = this->mParameters[1];
-    //const double interior_notch = this->mParameters[2];
+    // d[Ds]/dt
+    rDY[0] = -neigh_FtP*Ds - neigh_Ft*Ds + neigh_A + 4*neigh_C; 
 
-    //const double ka_on = 1.0;
-    //const double kb_on = 1.0;
-    //const double kc_on = 1.0;
-    //const double kd_on = 1.0;
-    //const double ka_off = 1.0;
-    //const double kb_off = 2.0;
-    //const double kc_off = 4.0;
-    //const double kd_off = 4.0;
+    // d[Ft]/dt
+    rDY[1] = -neigh_Ds*Ft - neigh_DsP*Ft + 4*C + 4*D;
 
-    rDY[0] = -neigh_FtP * notch -  neigh_delta +  A_ + 2 * C_; // d[Ds]/dt
+    // d[DsP]/dt
+    rDY[2] = -neigh_FtP*DsP - neigh_Ft*DsP + 2*neigh_B + 4*neigh_D;
 
-    rDY[1] = -delta * neigh_notch - delta * neigh_DsP + 4 * C + 4 * D; // d[Ft]/dt
+    // d[FtP]/dt
+    rDY[3] =  -neigh_Ds*FtP - neigh_DsP*FtP + A + 2*B;
 
-    rDY[2] = -neigh_FtP * DsP -  neigh_delta * DsP + 2 * B_ + 4 * D_; // d[DsP]/dt
+    // d[A]/dt
+    rDY[4] = neigh_Ds*FtP - A;
 
-    rDY[3] =  FtP * neigh_notch -  FtP * neigh_DsP +  A + 4 * B; // d[FtP]/dt
+    // d[B]/dt
+    rDY[5] = neigh_DsP*FtP - 2*B;
+    
+    // d[C]/dt
+    rDY[6]= neigh_Ds*Ft - 4*C; 
+    
+    // d[D]/dt
+    rDY[7] = neigh_DsP*Ft - 4*D; 
 
-
-
-    rDY[4] =  FtP * neigh_notch -  A; // d[A]/dt
-
-    rDY[5] =  FtP * neigh_DsP - 2 * B; // d[B]/dt
-
-    rDY[6]=  delta * neigh_notch - 4 * C; // d[C]/dt
-
-    rDY[7] =  delta * neigh_DsP - 4 * D; // d[D]/dt
-
-
-
-    rDY[8] =  notch * neigh_FtP -  A_; // d[A_]/dt
-
-    rDY[9] =  neigh_FtP * DsP - 2 * B_; // d[B_]/dt
-
-    rDY[10]=  neigh_delta * notch - 4 * C_; // d[C_]/dt
-
-    rDY[11] =  neigh_delta * DsP - 4 * D_; // d[D_]/dt
-
+    // d[neigh_A]/dt
+    rDY[8] = neigh_FtP*Ds - neigh_A; 
+    
+    // d[neigh_B]/dt
+    rDY[9] = neigh_FtP*DsP - 2*neigh_B; 
+    
+    // d[neigh_C]/dt
+    rDY[10]= neigh_Ft*Ds - 4*neigh_C; 
+    
+    // d[neigh_D]/dt
+    rDY[11] = neigh_Ft*DsP - 4*neigh_D;
 }
 
 template<>
 void CellwiseOdeSystemInformation<FtDsEdgeOdeSystem>::Initialise()
 {
-    this->mVariableNames.push_back("Notch");
+    // this->mInitialConditions will be filled in later
+    this->mVariableNames.push_back("Ds");
     this->mVariableUnits.push_back("non-dim");
-    this->mInitialConditions.push_back(0.0); // will be filled in later
+    this->mInitialConditions.push_back(0.0);
 
-    this->mVariableNames.push_back("Delta");
+    this->mVariableNames.push_back("Ft");
     this->mVariableUnits.push_back("non-dim");
-    this->mInitialConditions.push_back(0.0); // will be filled in later
+    this->mInitialConditions.push_back(0.0);
 
     this->mVariableNames.push_back("DsP");
     this->mVariableUnits.push_back("non-dim");
-    this->mInitialConditions.push_back(0.0); // will be filled in later
+    this->mInitialConditions.push_back(0.0);
 
     this->mVariableNames.push_back("FtP");
     this->mVariableUnits.push_back("non-dim");
-    this->mInitialConditions.push_back(0.0); // will be filled in later
+    this->mInitialConditions.push_back(0.0);
 
     this->mVariableNames.push_back("A");
     this->mVariableUnits.push_back("non-dim");
-    this->mInitialConditions.push_back(0.0); // will be filled in later
+    this->mInitialConditions.push_back(0.0);
 
     this->mVariableNames.push_back("B");
     this->mVariableUnits.push_back("non-dim");
-    this->mInitialConditions.push_back(0.0); // will be filled in later
+    this->mInitialConditions.push_back(0.0);
 
     this->mVariableNames.push_back("C");
     this->mVariableUnits.push_back("non-dim");
-    this->mInitialConditions.push_back(0.0); // will be filled in later
+    this->mInitialConditions.push_back(0.0);
 
     this->mVariableNames.push_back("D");
     this->mVariableUnits.push_back("non-dim");
-    this->mInitialConditions.push_back(0.0); // will be filled in later
+    this->mInitialConditions.push_back(0.0);
 
-    this->mVariableNames.push_back("A_");
+    this->mVariableNames.push_back("neigh_A");
     this->mVariableUnits.push_back("non-dim");
-    this->mInitialConditions.push_back(0.0); // will be filled in later
+    this->mInitialConditions.push_back(0.0);
 
-    this->mVariableNames.push_back("B_");
+    this->mVariableNames.push_back("neigh_B");
     this->mVariableUnits.push_back("non-dim");
-    this->mInitialConditions.push_back(0.0); // will be filled in later
+    this->mInitialConditions.push_back(0.0);
 
-    this->mVariableNames.push_back("C_");
+    this->mVariableNames.push_back("neigh_C");
     this->mVariableUnits.push_back("non-dim");
-    this->mInitialConditions.push_back(0.0); // will be filled in later
+    this->mInitialConditions.push_back(0.0);
 
-    this->mVariableNames.push_back("D_");
+    this->mVariableNames.push_back("neigh_D");
     this->mVariableUnits.push_back("non-dim");
-    this->mInitialConditions.push_back(0.0); // will be filled in later
+    this->mInitialConditions.push_back(0.0);
 
-
-
-    this->mParameterNames.push_back("neighbour delta");
+    this->mParameterNames.push_back("neighbour Ds");
     this->mParameterUnits.push_back("non-dim");
-    this->mParameterNames.push_back("neighbour notch");
+    this->mParameterNames.push_back("neighbour Ft");
     this->mParameterUnits.push_back("non-dim");
 
     this->mParameterNames.push_back("neighbour DsP");
