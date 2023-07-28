@@ -1,5 +1,5 @@
-#ifndef SidekickBoundaryCondition_HPP_
-#define SidekickBoundaryCondition_HPP_
+#ifndef SIDEKICKBOUNDARYCONDITION_HPP_
+#define SIDEKICKBOUNDARYCONDITION_HPP_
 
 #include "AbstractCellPopulationBoundaryCondition.hpp"
 
@@ -33,33 +33,30 @@ public:
    *
    * @param pCellPopulation pointer to the cell population
    */
-  SidekickBoundaryCondition(AbstractCellPopulation<DIM>* pCellPopulation);
+  explicit SidekickBoundaryCondition(AbstractCellPopulation<DIM>* pCellPopulation);
   
   /**
    * Overridden ImposeBoundaryCondition() method.
    *
-   * Apply the cell population boundary conditions.
-   *
    * @param rOldLocations the node locations before any boundary conditions are applied
    */
-  void ImposeBoundaryCondition(const std::map<Node<DIM>*, c_vector<double, DIM> >& rOldLocations);
+  void ImposeBoundaryCondition(
+      const std::map<Node<DIM>*, c_vector<double, DIM> >& rOldLocations) override;
   
   /**
    * Overridden VerifyBoundaryCondition() method.
-   * Verify the boundary conditions have been applied.
-   * This is called after ImposeBoundaryCondition() to ensure the condition is still satisfied.
    *
    * @return whether the boundary conditions are satisfied.
    */
-  bool VerifyBoundaryCondition();
+  bool VerifyBoundaryCondition() override;
   
   /**
    * Overridden OutputCellPopulationBoundaryConditionParameters() method.
-   * Output cell population boundary condition parameters to file.
    *
    * @param rParamsFile the file stream to which the parameters are output
    */
-  void OutputCellPopulationBoundaryConditionParameters(out_stream& rParamsFile);
+  void OutputCellPopulationBoundaryConditionParameters(
+      out_stream& rParamsFile) override;
 };
 
 #include "SerializationExportWrapper.hpp"
@@ -98,4 +95,4 @@ EXPORT_TEMPLATE_CLASS_SAME_DIMS(SidekickBoundaryCondition)
   }
   } // namespace ...
 
-#endif /*SidekickBoundaryCondition_HPP_*/
+#endif /*SIDEKICKBOUNDARYCONDITION_HPP_*/

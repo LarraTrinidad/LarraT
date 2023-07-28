@@ -1,56 +1,27 @@
-/*
-Copyright (c) 2005-2021, University of Oxford.
-All rights reserved.
-University of Oxford means the Chancellor, Masters and Scholars of the
-University of Oxford, having an administrative office at Wellington
-Square, Oxford OX1 2JD, UK.
-This file is part of Chaste.
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
- * Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
- * Neither the name of the University of Oxford nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-
-#include "DeltaNotchEdgeTrackingModifier.hpp"
+#include "FtDsEdgeTrackingModifier.hpp"
 #include "CellSrnModel.hpp"
-#include "DeltaNotchEdgeSrnModel.hpp"
+#include "FtDsEdgeSrnModel.hpp"
 
 template<unsigned DIM>
-DeltaNotchEdgeTrackingModifier<DIM>::DeltaNotchEdgeTrackingModifier()
-        : AbstractCellBasedSimulationModifier<DIM>()
+FtDsEdgeTrackingModifier<DIM>::FtDsEdgeTrackingModifier()
+    : AbstractCellBasedSimulationModifier<DIM>()
 {
 }
 
 template<unsigned DIM>
-DeltaNotchEdgeTrackingModifier<DIM>::~DeltaNotchEdgeTrackingModifier()
+FtDsEdgeTrackingModifier<DIM>::~FtDsEdgeTrackingModifier()
 {
 }
 
 template<unsigned DIM>
-void DeltaNotchEdgeTrackingModifier<DIM>::UpdateAtEndOfTimeStep(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
+void FtDsEdgeTrackingModifier<DIM>::UpdateAtEndOfTimeStep(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
 {
     // Update the cell
     this->UpdateCellData(rCellPopulation);
 }
 
 template<unsigned DIM>
-void DeltaNotchEdgeTrackingModifier<DIM>::SetupSolve(AbstractCellPopulation<DIM,DIM>& rCellPopulation, std::string outputDirectory)
+void FtDsEdgeTrackingModifier<DIM>::SetupSolve(AbstractCellPopulation<DIM,DIM>& rCellPopulation, std::string outputDirectory)
 {
     /*
      * We must update CellData in SetupSolve(), otherwise it will not have been
@@ -60,7 +31,7 @@ void DeltaNotchEdgeTrackingModifier<DIM>::SetupSolve(AbstractCellPopulation<DIM,
 }
 
 template<unsigned DIM>
-void DeltaNotchEdgeTrackingModifier<DIM>::UpdateCellData(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
+void FtDsEdgeTrackingModifier<DIM>::UpdateCellData(AbstractCellPopulation<DIM,DIM>& rCellPopulation)
 {
     // Recovers each cell's edge levels proteins, and those of its neighbor's
     // Then saves them
@@ -90,8 +61,8 @@ void DeltaNotchEdgeTrackingModifier<DIM>::UpdateCellData(AbstractCellPopulation<
         std::vector<double> xp1_vec;
         for (unsigned i = 0 ; i  < p_cell_edge_model->GetNumEdgeSrn(); i++)
         {
-            boost::shared_ptr<DeltaNotchEdgeSrnModel> p_model
-            = boost::static_pointer_cast<DeltaNotchEdgeSrnModel>(p_cell_edge_model->GetEdgeSrn(i));
+            boost::shared_ptr<FtDsEdgeSrnModel> p_model
+            = boost::static_pointer_cast<FtDsEdgeSrnModel>(p_cell_edge_model->GetEdgeSrn(i));
             double this_notch = p_model->GetNotch();
             double this_delta = p_model->GetDelta();
             double this_DsP = p_model->GetDsP();
@@ -106,7 +77,7 @@ void DeltaNotchEdgeTrackingModifier<DIM>::UpdateCellData(AbstractCellPopulation<
             double this_D_ = p_model->GetD_();
 
 
-            if( i == 0){
+            if ( i == 0){
             double this_xm1 = rCellPopulation.rGetMesh().GetDistanceBetweenNodes(p_cell_edge_model->GetNumEdgeSrn() -1, i);
             double this_x = rCellPopulation.rGetMesh().GetDistanceBetweenNodes(i, i + 1);
             double this_xp1 = rCellPopulation.rGetMesh().GetDistanceBetweenNodes(i + 1, i + 2);
@@ -139,8 +110,8 @@ void DeltaNotchEdgeTrackingModifier<DIM>::UpdateCellData(AbstractCellPopulation<
         for (unsigned i = 0 ; i  < p_cell_edge_model->GetNumEdgeSrn(); i++)
         {
            double D = 0.03; //pow(10, -2);
-           boost::shared_ptr<DeltaNotchEdgeSrnModel> p_model
-           = boost::static_pointer_cast<DeltaNotchEdgeSrnModel>(p_cell_edge_model->GetEdgeSrn(i));
+           boost::shared_ptr<FtDsEdgeSrnModel> p_model
+           = boost::static_pointer_cast<FtDsEdgeSrnModel>(p_cell_edge_model->GetEdgeSrn(i));
 
            double x1 = (xm1_vec[i] + x_vec[i])/2.0;
            //double x2 = (xp1_vec[i] + x_vec[i])/2.0;
@@ -150,9 +121,9 @@ void DeltaNotchEdgeTrackingModifier<DIM>::UpdateCellData(AbstractCellPopulation<
            double y1 = i;
            double yp1 = i + 1;
            
-           if( i == 0){
+           if ( i == 0){
              ym1 = p_cell_edge_model->GetNumEdgeSrn() -1;
-           } else if( i == p_cell_edge_model->GetNumEdgeSrn() -1){
+           } else if ( i == p_cell_edge_model->GetNumEdgeSrn() -1){
              yp1 = 0;
            } else {
              ym1 = i - 1;
@@ -198,7 +169,7 @@ void DeltaNotchEdgeTrackingModifier<DIM>::UpdateCellData(AbstractCellPopulation<
           //boundstrabismus_vec[i] = combined2_vec[i] + combinedm3_vec[i] + combinedm4_vec[i];
 
         }
-        // Note that the state variables must be in the same order as listed in DeltaNotchOdeSystem
+        // Note that the state variables must be in the same order as listed in FtDsOdeSystem
         cell_iter->GetCellEdgeData()->SetItem("edge notch", notch_vec);
         cell_iter->GetCellEdgeData()->SetItem("edge delta", delta_vec);
         cell_iter->GetCellEdgeData()->SetItem("edge DsP", DsP_vec);
@@ -253,8 +224,8 @@ void DeltaNotchEdgeTrackingModifier<DIM>::UpdateCellData(AbstractCellPopulation<
         
         for (unsigned i = 0 ; i  < p_cell_edge_model->GetNumEdgeSrn(); i++)
         {
-            boost::shared_ptr<DeltaNotchEdgeSrnModel> p_model
-            = boost::static_pointer_cast<DeltaNotchEdgeSrnModel>(p_cell_edge_model->GetEdgeSrn(i));
+            boost::shared_ptr<FtDsEdgeSrnModel> p_model
+            = boost::static_pointer_cast<FtDsEdgeSrnModel>(p_cell_edge_model->GetEdgeSrn(i));
             double this_notch = p_model->GetNotch();
             double this_delta = p_model->GetDelta();
             double this_DsP = p_model->GetDsP();
@@ -394,18 +365,18 @@ void DeltaNotchEdgeTrackingModifier<DIM>::UpdateCellData(AbstractCellPopulation<
 }
 
 template<unsigned DIM>
-void DeltaNotchEdgeTrackingModifier<DIM>::OutputSimulationModifierParameters(out_stream& rParamsFile)
+void FtDsEdgeTrackingModifier<DIM>::OutputSimulationModifierParameters(out_stream& rParamsFile)
 {
     // No parameters to output, so just call method on direct parent class
     AbstractCellBasedSimulationModifier<DIM>::OutputSimulationModifierParameters(rParamsFile);
 }
 
 // Explicit instantiation
-template class DeltaNotchEdgeTrackingModifier<1>;
-template class DeltaNotchEdgeTrackingModifier<2>;
-template class DeltaNotchEdgeTrackingModifier<3>;
+template class FtDsEdgeTrackingModifier<1>;
+template class FtDsEdgeTrackingModifier<2>;
+template class FtDsEdgeTrackingModifier<3>;
 
 // Serialization for Boost >= 1.36
 #include "SerializationExportWrapperForCpp.hpp"
 
-EXPORT_TEMPLATE_CLASS_SAME_DIMS(DeltaNotchEdgeTrackingModifier)
+EXPORT_TEMPLATE_CLASS_SAME_DIMS(FtDsEdgeTrackingModifier)

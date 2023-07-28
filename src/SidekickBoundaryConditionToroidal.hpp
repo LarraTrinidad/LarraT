@@ -32,7 +32,7 @@ public:
    *
    * @param pCellPopulation pointer to the cell population
    */
-  SidekickBoundaryConditionToroidal(AbstractCellPopulation<2>* pCellPopulation);
+  explicit SidekickBoundaryConditionToroidal(AbstractCellPopulation<2>* pCellPopulation);
   
   /**
    * Overridden ImposeBoundaryCondition() method.

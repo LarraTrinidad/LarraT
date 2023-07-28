@@ -81,7 +81,7 @@ void ExtrinsicPullModifierToroidal::UpdateAtEndOfTimeStep(AbstractCellPopulation
     // std::vector<float> posterior_nodes;
     // std::set<unsigned> boundaryNodes = p_static_cast_mesh_toroidal->GetBoundaryNodes();
     // // If it was a RHS boundary node, check where it is and fix it
-    // for(auto n_index : boundaryNodes)
+    // for (auto n_index : boundaryNodes)
     // {
     //     // Get the node
     //     Node<2>* p_node = rCellPopulation.GetNode(n_index);
@@ -128,10 +128,9 @@ void ExtrinsicPullModifierToroidal::UpdateAtEndOfTimeStep(AbstractCellPopulation
     // Pull the RHS
     p_static_cast_mesh_toroidal->SetBoxCoords(1, currentXUpper*(1+posterior_strain*gradual_scaling));
     ////////////////  p_static_cast_mesh_toroidal->SetBoxCoords(1, currentXUpper*(1+posterior_strain*gradual_scaling));
-    
-    
+
     // // Move all the nodes appropriately
-    // for(auto n_index : posterior_nodes)
+    // for (auto n_index : posterior_nodes)
     // {
     //     // Get the node
     //     Node<2>* p_node = rCellPopulation.GetNode(n_index);

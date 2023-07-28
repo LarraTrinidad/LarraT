@@ -201,11 +201,11 @@ void Toroidal2dVertexMeshWithMutableSize::RefitPeriodicBox()
     c_vector<double, 2> location;
     location = GetNode(index)->rGetLocation();
     // If the location is lower than the current min, update.
-    if( location[0] < minX )
+    if ( location[0] < minX )
     {
       minX = location[0];
     }
-    if( location[1] < minY )
+    if ( location[1] < minY )
     {
       minY = location[1];
     }
@@ -299,7 +299,7 @@ std::set<unsigned> Toroidal2dVertexMeshWithMutableSize::GetBoundaryNodes()
     std::set<unsigned> neighbourNodes = GetNeighbouringNodeIndices(node_index);
     
     // // Iterate over connected nodes
-    for(auto neighbourIndex : neighbourNodes)
+    for (auto neighbourIndex : neighbourNodes)
     {
       // Get dist between nodes
       double nodeY = p_node->rGetLocation()[1];
@@ -311,10 +311,10 @@ std::set<unsigned> Toroidal2dVertexMeshWithMutableSize::GetBoundaryNodes()
       double width = this->GetWidth(0);
       double height = this->GetWidth(1);
       // If on other side of mesh, mark as boundary node.
-      if( fabs(nodeX - neighbourX) > 0.2*width || fabs(nodeY - neighbourY) > 0.2*height)
+      if (fabs(nodeX - neighbourX) > 0.2*width || fabs(nodeY - neighbourY) > 0.2*height)
       {
         boundaryNodes.insert(node_index);
-        for(auto nabIndex : neighbourNodes)
+        for (auto nabIndex : neighbourNodes)
         {
           boundaryNodes.insert(nabIndex);
         }
@@ -379,7 +379,7 @@ void Toroidal2dVertexMeshWithMutableSize::RelaxPeriodicBox(AbstractCellPopulatio
   std::set<unsigned> boundaryNodes = this->GetBoundaryNodes();
   
   // If it was a boundary node, check where it is and pull it appropriately
-  for(auto n_index : boundaryNodes)
+  for (auto n_index : boundaryNodes)
   {
     // Get the node
     Node<2>* p_node = this->GetNode(n_index);

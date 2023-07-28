@@ -9,13 +9,13 @@
 #include "FarhadifarForce.hpp"
 
 /**
- * A subclass of MutableVertexMesh<2,2> for a rectangular mesh with
- * periodic left and right boundaries and top and bottom boundaries,
- * representing a toroidal geometry.
+ * A subclass of MutableVertexMesh<2,2> for a rectangular mesh with periodic 
+ * left and right boundaries and top and bottom boundaries, representing a 
+ * toroidal geometry.
  *
- * The class works by overriding calls such as ReMesh() and
- * GetVectorFromAtoB() so that simulation classes can treat this
- * class in exactly the same way as a MutableMesh<2,2>.
+ * The class works by overriding calls such as ReMesh() and GetVectorFromAtoB() 
+ * so that simulation classes can treat this class in exactly the same way as a 
+ * MutableMesh<2,2>.
  */
 class Toroidal2dVertexMeshWithMutableSize : public MutableVertexMesh<2,2>
 {
@@ -78,8 +78,10 @@ public:
    * @param height the height of the mesh
    * @param nodes vector of pointers to nodes
    * @param vertexElements vector of pointers to VertexElements
-   * @param cellRearrangementThreshold the minimum threshold distance for element rearrangement (defaults to 0.01)
-   * @param t2Threshold the maximum threshold distance for Type 2 swaps (defaults to 0.001)
+   * @param cellRearrangementThreshold the minimum threshold distance for 
+   *     element rearrangement (defaults to 0.01)
+   * @param t2Threshold the maximum threshold distance for Type 2 swaps 
+   *     (defaults to 0.001)
    */
   Toroidal2dVertexMeshWithMutableSize(double width,
                                       double height,
@@ -101,26 +103,28 @@ public:
   /**
    * Overridden GetVectorFromAtoB() method.
    *
-   * This method evaluates the (surface) distance between
-   * two points in a 2D toroidal geometry.
+   * This method evaluates the (surface) distance between two points in a 2D 
+   * toroidal geometry.
    *
    * @param rLocation1 the x and y co-ordinates of point 1
    * @param rLocation2 the x and y co-ordinates of point 2
    *
    * @return the vector from location1 to location2
    */
-  c_vector<double, 2> GetVectorFromAtoB(const c_vector<double, 2>& rLocation1, const c_vector<double, 2>& rLocation2);
+  c_vector<double, 2> GetVectorFromAtoB(
+      const c_vector<double, 2>& rLocation1,
+      const c_vector<double, 2>& rLocation2) override;
   
   /**
    * Overridden SetNode() method.
    *
-   * If the location should be set outside a toroidal boundary
-   * move it back onto the cylinder.
+   * If the location should be set outside a toroidal boundary move it back onto 
+   * the cylinder.
    *
    * @param nodeIndex is the index of the node to be moved
    * @param point is the new target location of the node
    */
-  void SetNode(unsigned nodeIndex, ChastePoint<2> point);
+  void SetNode(unsigned nodeIndex, ChastePoint<2> point) override;
   
   /**
    * Overridden GetWidth() method.
@@ -131,7 +135,7 @@ public:
    * @param rDimension a dimension (0 or 1)
    * @return The maximum distance between any nodes in this dimension.
    */
-  double GetWidth(const unsigned& rDimension) const;
+  double GetWidth(const unsigned& rDimension) const override;
   
   /**
    * New SetWidth() method.
@@ -244,7 +248,7 @@ public:
    *
    * @return a non-periodic vertex mesh
    */
-  VertexMesh<2,2>* GetMeshForVtk();
+  VertexMesh<2,2>* GetMeshForVtk() override;
   
   /**
    * Construct the mesh using a MeshReader.

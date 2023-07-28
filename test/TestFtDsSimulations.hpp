@@ -1,107 +1,56 @@
-/*
-
-Copyright (c) 2005-2021, University of Oxford.
-All rights reserved.
-
-University of Oxford means the Chancellor, Masters and Scholars of the
-University of Oxford, having an administrative office at Wellington
-Square, Oxford OX1 2JD, UK.
-
-This file is part of Chaste.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
- * Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
- * Neither the name of the University of Oxford nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-*/
-
-#ifndef TESTDELTANOTCHEDGEINTERIORODESIMULATION_HPP_
-#define TESTDELTANOTCHEDGEINTERIORODESIMULATION_HPP_
+#ifndef TESTFTDSSIMULATIONS_HPP_
+#define TESTFTDSSIMULATIONS_HPP_
 
 #include <cxxtest/TestSuite.h>
 #include "AbstractCellBasedTestSuite.hpp"
-#include "CellAgesWriter.hpp"
-#include "CellMutationStatesCountWriter.hpp"
-#include "CellProliferativePhasesCountWriter.hpp"
-#include "CellProliferativePhasesWriter.hpp"
-#include "CellProliferativeTypesCountWriter.hpp"
-#include "CellProliferativeTypesWriter.hpp"
-#include "CellVolumesWriter.hpp"
+#include "BernoulliTrialCellCycleModel.hpp"
+#include "CellSrnModel.hpp"
 #include "CheckpointArchiveTypes.hpp"
+#include "DeltaNotchInteriorSrnModel.hpp" ///\todo This should be replaced with a new class FtDsInteriorSrnModel
+#include "DeltaNotchEdgeInteriorTrackingModifier.hpp" ///\todo This should be replaced with a new class FtDsEdgeInteriorTrackingModifier
+#include "FtDsEdgeSrnModel.hpp"
+#include "FtDsEdgeTrackingModifier.hpp"
 #include "HoneycombVertexMeshGenerator.hpp"
-#include "NagaiHondaForce.hpp"
-#include "NodeBasedCellPopulation.hpp"
+#include "NoCellCycleModel.hpp"
 #include "OffLatticeSimulation.hpp"
+#include "PetscSetupAndFinalize.hpp"
+#include "ShortAxisVertexBasedDivisionRule.hpp"
 #include "SimpleTargetAreaModifier.hpp"
 #include "SmartPointers.hpp"
 #include "TransitCellProliferativeType.hpp"
-#include "UniformCellCycleModel.hpp"
-#include "UniformG1GenerationalCellCycleModel.hpp"
 #include "VertexBasedCellPopulation.hpp"
 #include "WildTypeCellMutationState.hpp"
-#include "PetscSetupAndFinalize.hpp"
 
-#include "CellSrnModel.hpp"
-
-#include "DeltaNotchEdgeSrnModel.hpp"
-#include "DeltaNotchEdgeTrackingModifier.hpp"
-
-#include "DeltaNotchEdgeInteriorTrackingModifier.hpp"
-#include "DeltaNotchInteriorSrnModel.hpp"
-
-#include "ShortAxisVertexBasedDivisionRule.hpp"
-
-/**
- * These tests check and demonstrate simulation of vertex based models with edge and interior Srn models
- */
-class TestDeltaNotchEdgeOnlyODESimulation_LT : public AbstractCellBasedTestSuite
+class TestFtDsSimulations : public AbstractCellBasedTestSuite
 {
 public:
-    /*
-     * Test vertex based simulations when both edge AND interior SRN models are specified
-     */
-    void TestRunningMultiODECellWithEdgesAndInterior()
+
+    void TestFtDsPolarisationWithoutCellDivision()
     {
         EXIT_IF_PARALLEL;
-        /* First we create a regular vertex mesh. */
+
+        // Create regular heaxgonal mesh object
         HoneycombVertexMeshGenerator generator(5, 3);
         MutableVertexMesh<2, 2>* p_mesh = generator.GetMesh();
 
+        // Create cell objects, one for each hexagonal element of the mesh
         std::vector<CellPtr> cells;
         MAKE_PTR(WildTypeCellMutationState, p_state);
         MAKE_PTR(TransitCellProliferativeType, p_diff_type);
 
-        for (unsigned elem_index = 0; elem_index < p_mesh->GetNumElements(); elem_index++)
+        for (unsigned index = 0; index < p_mesh->GetNumElements(); ++index)
         {
-            
-            /* Initalise cell cycle */
-            UniformG1GenerationalCellCycleModel* p_cc_model = new UniformG1GenerationalCellCycleModel();
+            // Omit cell division, so use 'no cell cycle' model
+            NoCellCycleModel* p_cc_model = new NoCellCycleModel();
             p_cc_model->SetDimension(2);
 
-            auto p_element = p_mesh->GetElement(elem_index);
-            /* Initialise edge based SRN */
+            // Initialise edge-based SRN
             auto p_cell_edge_srn_model = new CellSrnModel();
-            auto centroid_x = p_mesh->GetCentroidOfElement(elem_index)[0];
-            auto centroid_y = p_mesh->GetCentroidOfElement(elem_index)[1];
-            /* We choose to initialise the total concentrations as follows */
+            auto centroid_x = p_mesh->GetCentroidOfElement(index)[0];
+            auto centroid_y = p_mesh->GetCentroidOfElement(index)[1];
+
+            // Initialise protein concentrations
+            ///\todo why are notch and delta specified?
             auto notch_concentration = -((5+centroid_x * centroid_x) * (5+(centroid_y -1.5) * (centroid_y -1.5))) +1.5+216; // 50*(1-((80 + 10 * centroid)/ (80 + 10 * 6)));
             auto delta_concentration = -((5+centroid_x * centroid_x) * (5+(centroid_y -1.5) * (centroid_y -1.5))) +1.5+216; // 50*(1-((80 + 10 * elem_index)) / (80 + 10 * 3));
             auto DsP_concentration = (5+centroid_x * centroid_x) * (5+(centroid_y -1.5) * (centroid_y -1.5)) - 1.5; //50*((80 + 10 * centroid) / (80 + 10 * 6));
@@ -110,29 +59,26 @@ public:
             auto B_concentration = 0;
             auto C_concentration = 0;
             auto D_concentration = 0;
-            auto A__concentration = 0;
-            auto B__concentration = 0;
-            auto C__concentration = 0;
-            auto D__concentration = 0;
-            
-            // auto delta_concentration = RandomNumberGenerator::Instance()->ranf();
-            // auto notch_concentration = RandomNumberGenerator::Instance()->ranf();
-            // auto C_concentration = RandomNumberGenerator::Instance()->ranf();
+            auto A__concentration = 0; ///\todo how is this different to A_concentration?
+            auto B__concentration = 0; ///\todo how is this different to B_concentration?
+            auto C__concentration = 0; ///\todo how is this different to C_concentration?
+            auto D__concentration = 0; ///\todo how is this different to D_concentration?
 
             double total_edge_length = 0.0;
-            for (unsigned i = 0; i < p_element->GetNumEdges(); i++)
+            auto p_element = p_mesh->GetElement(index);
+            for (unsigned i = 0; i < p_element->GetNumEdges(); ++i)
             {
                 total_edge_length += p_element->GetEdge(i)->rGetLength();
             }
 
-            /* Gets the edges of the element and create an SRN for each edge */
-            for (unsigned i = 0; i < p_element->GetNumEdges(); i++)
+            // Create SRN model for each edge
+            for (unsigned i = 0; i < p_element->GetNumEdges(); ++i)
             {
                 auto p_elem_edge = p_element->GetEdge(i);
                 auto p_edge_length = p_elem_edge->rGetLength();
                 std::vector<double> initial_conditions;
 
-                /* Initial concentration of delta and notch vary depending on the edge length */
+                // Initial concentration of delta and notch vary depending on the edge length
                 initial_conditions.push_back(p_edge_length / total_edge_length * notch_concentration);
                 initial_conditions.push_back(p_edge_length / total_edge_length * delta_concentration);
                 initial_conditions.push_back(p_edge_length / total_edge_length * DsP_concentration);
@@ -146,70 +92,44 @@ public:
                 initial_conditions.push_back(p_edge_length / total_edge_length * C__concentration);
                 initial_conditions.push_back(p_edge_length / total_edge_length * D__concentration);
 
-                MAKE_PTR(DeltaNotchEdgeSrnModel, p_srn_model);
+                MAKE_PTR(FtDsEdgeSrnModel, p_srn_model);
                 p_srn_model->SetInitialConditions(initial_conditions);
                 p_cell_edge_srn_model->AddEdgeSrnModel(p_srn_model);
             }
-            // Add interior SRN models to cells
+
+            // Create interior SRN model
             MAKE_PTR(DeltaNotchInteriorSrnModel, p_cell_srn_model);
             std::vector<double> zero_conditions(2);
             p_cell_srn_model->SetInitialConditions(zero_conditions);
             p_cell_edge_srn_model->SetInteriorSrnModel(p_cell_srn_model);
 
+            // Create cell object
             CellPtr p_cell(new Cell(p_state, p_cc_model, p_cell_edge_srn_model));
             p_cell->SetCellProliferativeType(p_diff_type);
-
-            double birth_time = -RandomNumberGenerator::Instance()->ranf() * 12.0;
-            p_cell->SetBirthTime(birth_time);
+            p_cell->SetBirthTime(-1.0);
             cells.push_back(p_cell);
         }
-        /* Using the vertex mesh and cells, we create a cell-based population object, and specify which results to
-         * output to file. */
+
+        // Create vertex-based cell population object
         VertexBasedCellPopulation<2> cell_population(*p_mesh, cells);
-        cell_population.AddCellPopulationCountWriter<CellMutationStatesCountWriter>();
-        cell_population.AddCellPopulationCountWriter<CellProliferativeTypesCountWriter>();
-        cell_population.AddCellPopulationCountWriter<CellProliferativePhasesCountWriter>();
-        cell_population.AddCellWriter<CellProliferativePhasesWriter>();
-        cell_population.AddCellWriter<CellAgesWriter>();
-        cell_population.AddCellWriter<CellVolumesWriter>();
 
-        /* We are now in a position to create and configure the cell-based simulation object, pass a force law to it,
-         * and run the simulation.*/
+        // Create cell-based simulation object
         OffLatticeSimulation<2> simulator(cell_population);
-        simulator.SetOutputDirectory("TestDeltaNotchEdgeInteriorODESimulation_LT_ODE");
-
-        /* Update CellData and CellEdgeData so that SRN simulations can run properly */
-        MAKE_PTR(DeltaNotchEdgeInteriorTrackingModifier<2>, p_cell_modifier);
-        simulator.AddSimulationModifier(p_cell_modifier);
-        MAKE_PTR(DeltaNotchEdgeTrackingModifier<2>, p_edge_modifier);
-        simulator.AddSimulationModifier(p_edge_modifier);
-
-        MAKE_PTR(NagaiHondaForce<2>, p_force);
-        simulator.AddForce(p_force);
-
-        simulator.SetOutputDivisionLocations(true);
-        // Add division rule
-        boost::shared_ptr<ShortAxisVertexBasedDivisionRule<2> > p_division_rule(new ShortAxisVertexBasedDivisionRule<2>());
-        cell_population.SetVertexBasedDivisionRule(p_division_rule);
-
-        /* This modifier assigns target areas to each cell, which are required by the {{{NagaiHondaForce}}}.
-         */
-        MAKE_PTR(SimpleTargetAreaModifier<2>, p_growth_modifier);
-        simulator.AddSimulationModifier(p_growth_modifier);
-
-        
+        simulator.SetOutputDirectory("TestFtDsPolarisationWithoutCellDivision");        
         simulator.SetSamplingTimestepMultiple(1.0);
-        //simulator.SetDt(0.1);
         simulator.SetEndTime(1.0);
 
+        // Create and pass tracking modifiers to simulation
+        MAKE_PTR(DeltaNotchEdgeInteriorTrackingModifier<2>, p_cell_modifier);
+        simulator.AddSimulationModifier(p_cell_modifier);
+        MAKE_PTR(FtDsEdgeTrackingModifier<2>, p_edge_modifier);
+        simulator.AddSimulationModifier(p_edge_modifier);
+
+        // Run the simulation by calling Solve()
         simulator.Solve();
-        //TS_ASSERT_THROWS_NOTHING(simulator.Solve());
     }
 
-    /*
-     * Test whether vertex based models can run when ONLY edge SRN models are specified
-     */
-    void TestRunningMultiODECellWithEdges()
+    void noTestFtDsPolarisationWithCellDivision()
     {
         /* First we create a regular vertex mesh. */
         HoneycombVertexMeshGenerator generator(5, 3);
@@ -222,8 +142,10 @@ public:
         for (unsigned elem_index = 0; elem_index < p_mesh->GetNumElements(); elem_index++)
         {
             /* Initalise cell cycle */
-            UniformG1GenerationalCellCycleModel* p_cc_model = new UniformG1GenerationalCellCycleModel();
+            BernoulliTrialCellCycleModel* p_cc_model = new BernoulliTrialCellCycleModel();
             p_cc_model->SetDimension(2);
+            p_cc_model->SetBirthTime(-1.0);
+            p_cc_model->SetDivisionProbability(0.1);
 
             auto p_element = p_mesh->GetElement(elem_index);
 
@@ -277,7 +199,7 @@ public:
                 initial_conditions.push_back(p_edge_length / total_edge_length * C__concentration);
                 initial_conditions.push_back(p_edge_length / total_edge_length * D__concentration);
 
-                MAKE_PTR(DeltaNotchEdgeSrnModel, p_srn_model);
+                MAKE_PTR(FtDsEdgeSrnModel, p_srn_model);
                 p_srn_model->SetInitialConditions(initial_conditions);
                 p_cell_edge_srn_model->AddEdgeSrnModel(p_srn_model);
             }
@@ -290,45 +212,31 @@ public:
             cells.push_back(p_cell);
         }
 
-        /* Using the vertex mesh and cells, we create a cell-based population object, and specify which results to
-         * output to file. */
+        // Create vertex-based cell population object
         VertexBasedCellPopulation<2> cell_population(*p_mesh, cells);
-        cell_population.AddCellPopulationCountWriter<CellMutationStatesCountWriter>();
-        cell_population.AddCellPopulationCountWriter<CellProliferativeTypesCountWriter>();
-        cell_population.AddCellPopulationCountWriter<CellProliferativePhasesCountWriter>();
-        cell_population.AddCellWriter<CellProliferativePhasesWriter>();
-        cell_population.AddCellWriter<CellAgesWriter>();
-        cell_population.AddCellWriter<CellVolumesWriter>();
 
-        /* We are now in a position to create and configure the cell-based simulation object, pass a force law to it,
-         * and run the simulation. */
+        // Create cell-based simulation object
         OffLatticeSimulation<2> simulator(cell_population);
-        simulator.SetOutputDirectory("TestDeltaNotchEdgeOnlyODESimulation_LT_ODE");
-        //simulator.SetSamplingTimestepMultiple(1.0);
-        //simulator.SetEndTime(1.0);
-
-        /* Update CellEdgeData so that SRN simulations can run properly */
-        MAKE_PTR(DeltaNotchEdgeTrackingModifier<2>, p_modifier);
-        simulator.AddSimulationModifier(p_modifier);
-
-        MAKE_PTR(NagaiHondaForce<2>, p_force);
-        simulator.AddForce(p_force);
-
-        simulator.SetOutputDivisionLocations(true);
-        // Add division rule
-        boost::shared_ptr<ShortAxisVertexBasedDivisionRule<2> > p_division_rule(new ShortAxisVertexBasedDivisionRule<2>());
-        cell_population.SetVertexBasedDivisionRule(p_division_rule);
-
-        MAKE_PTR(SimpleTargetAreaModifier<2>, p_growth_modifier);
-        simulator.AddSimulationModifier(p_growth_modifier);
-        //TS_ASSERT_THROWS_NOTHING(simulator.Solve());
-
-                
+        simulator.SetOutputDirectory("TestFtDsPolarisationWithCellDivision");
         simulator.SetSamplingTimestepMultiple(1.0);
         simulator.SetDt(0.1);
         simulator.SetEndTime(1.0);
+
+        // Create and pass tracking modifiers to simulation
+        MAKE_PTR(FtDsEdgeTrackingModifier<2>, p_modifier);
+        simulator.AddSimulationModifier(p_modifier);
+
+        // Create and pass target area growth rule to simulation
+        MAKE_PTR(SimpleTargetAreaModifier<2>, p_growth_modifier);
+        simulator.AddSimulationModifier(p_growth_modifier);
+
+        // Create and pass cell division rule to simulation
+        boost::shared_ptr<ShortAxisVertexBasedDivisionRule<2> > p_division_rule(new ShortAxisVertexBasedDivisionRule<2>());
+        cell_population.SetVertexBasedDivisionRule(p_division_rule);
+
+        // Run the simulation by calling Solve()
         simulator.Solve();
     }
 };
 
-#endif /*TESTDELTANOTCHEDGEINTERIORODESIMULATION_HPP_*/
+#endif /*TESTFTDSSIMULATIONS_HPP_*/

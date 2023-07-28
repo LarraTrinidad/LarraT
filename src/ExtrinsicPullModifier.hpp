@@ -47,24 +47,25 @@ public:
   /**
    * Overridden UpdateAtEndOfTimeStep() method.
    *
-   * Specifies what to do in the simulation at the end of each time step.
-   *
    * @param rCellPopulation reference to the cell population
    */
-  virtual void UpdateAtEndOfTimeStep(AbstractCellPopulation<2,2>& rCellPopulation);
+  virtual void UpdateAtEndOfTimeStep(
+      AbstractCellPopulation<2,2>& rCellPopulation) override;
   
   /**
    * Overridden SetupSolve() method.
-   *
-   * Specifies what to do in the simulation before the start of the time loop.
-   *
+   * 
    * @param rCellPopulation reference to the cell population
-   * @param outputDirectory the output directory, relative to where Chaste output is stored
+   * @param outputDirectory the output directory, relative to where Chaste 
+   *     output is stored
    */
-  virtual void SetupSolve(AbstractCellPopulation<2,2>& rCellPopulation, std::string outputDirectory);
+  virtual void SetupSolve(
+      AbstractCellPopulation<2,2>& rCellPopulation,
+      std::string outputDirectory) override;
   
   /**
-   * @param applyExtrinsicPullToAllNodes whether to apply the extrinsic pull to all nodes in the tissue
+   * @param applyExtrinsicPullToAllNodes whether to apply the extrinsic pull to 
+   *     all nodes in the tissue
    */
   void ApplyExtrinsicPullToAllNodes(bool applyExtrinsicPullToAllNodes);
   
@@ -75,11 +76,10 @@ public:
   
   /**
    * Overridden OutputSimulationModifierParameters() method.
-   * Output any simulation modifier parameters to file.
    *
    * @param rParamsFile the file stream to which the parameters are output
    */
-  void OutputSimulationModifierParameters(out_stream& rParamsFile);
+  void OutputSimulationModifierParameters(out_stream& rParamsFile) override;
 };
 
 #include "SerializationExportWrapper.hpp"

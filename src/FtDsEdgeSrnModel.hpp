@@ -1,56 +1,21 @@
-/*
-
-Copyright (c) 2005-2021, University of Oxford.
-All rights reserved.
-
-University of Oxford means the Chancellor, Masters and Scholars of the
-University of Oxford, having an administrative office at Wellington
-Square, Oxford OX1 2JD, UK.
-
-This file is part of Chaste.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
- * Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
- * Neither the name of the University of Oxford nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-*/
-
-#ifndef DELTANOTCHEDGESRNMODEL_HPP_
-#define DELTANOTCHEDGESRNMODEL_HPP_
+#ifndef FTDSEDGESRNMODEL_HPP_
+#define FTDSEDGESRNMODEL_HPP_
 
 #include "ChasteSerialization.hpp"
 #include <boost/serialization/base_object.hpp>
 
-#include "DeltaNotchEdgeOdeSystem.hpp"
+#include "FtDsEdgeOdeSystem.hpp"
 #include "AbstractOdeSrnModel.hpp"
 
 /**
  * A subclass of AbstractOdeSrnModel that includes a Delta-Notch ODE system in the sub-cellular reaction network.
  * This SRN model represents a membrane/cortex of a single junction of a cell. This class of models can be used together
- * with DeltaNotchInteriorSrn models. The ODE model used here is an attempt to use previous work (see DeltaNotchSrnModel class)
+ * with FtDsInteriorSrn models. The ODE model used here is an attempt to use previous work (see FtDsSrnModel class)
  * for more detailed description of Delta-Notch interactions involving edge quantities (this or neighbour edge information) and
- * potentially coupling with cytoplasmic concentrations (DeltaNotchInteriorSrn class).
+ * potentially coupling with cytoplasmic concentrations (FtDsInteriorSrn class).
  * \todo #2987 document this class more thoroughly here
  */
-class DeltaNotchEdgeSrnModel : public AbstractOdeSrnModel
+class FtDsEdgeSrnModel : public AbstractOdeSrnModel
 {
 private:
 
@@ -82,7 +47,7 @@ protected:
      *
      * @param rModel  the SRN model to copy.
      */
-    DeltaNotchEdgeSrnModel(const DeltaNotchEdgeSrnModel& rModel);
+    FtDsEdgeSrnModel(const FtDsEdgeSrnModel& rModel);
 
 public:
 
@@ -91,7 +56,7 @@ public:
      *
      * @param pOdeSolver An optional pointer to a cell-cycle model ODE solver object (allows the use of different ODE solvers)
      */
-    DeltaNotchEdgeSrnModel(boost::shared_ptr<AbstractCellCycleModelOdeSolver> pOdeSolver = boost::shared_ptr<AbstractCellCycleModelOdeSolver>());
+    FtDsEdgeSrnModel(boost::shared_ptr<AbstractCellCycleModelOdeSolver> pOdeSolver = boost::shared_ptr<AbstractCellCycleModelOdeSolver>());
 
     /**
      * Overridden builder method to create new copies of this SRN model.
@@ -124,7 +89,7 @@ public:
      * That is, fetch neighbour values from CellEdgeData object, storing the sensed information,
      * into this model
      */
-    void UpdateDeltaNotch();
+    void UpdateFtDs();
 
     /**
      * @return the current Notch level in this edge
@@ -362,12 +327,12 @@ public:
     virtual void SplitEdgeSrn(const double relative_position) override;
 };
 
-typedef boost::shared_ptr<DeltaNotchEdgeSrnModel> DeltaNotchEdgeSrnModelPtr;
+typedef boost::shared_ptr<FtDsEdgeSrnModel> FtDsEdgeSrnModelPtr;
 
 // Declare identifier for the serializer
 #include "SerializationExportWrapper.hpp"
-CHASTE_CLASS_EXPORT(DeltaNotchEdgeSrnModel)
+CHASTE_CLASS_EXPORT(FtDsEdgeSrnModel)
 #include "CellCycleModelOdeSolverExportWrapper.hpp"
-EXPORT_CELL_CYCLE_MODEL_ODE_SOLVER(DeltaNotchEdgeSrnModel)
+EXPORT_CELL_CYCLE_MODEL_ODE_SOLVER(FtDsEdgeSrnModel)
 
-#endif  /* DELTANOTCHEDGESRNMODEL_HPP_ */
+#endif  /* FTDSEDGESRNMODEL_HPP_ */

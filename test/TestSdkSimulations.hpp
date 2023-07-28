@@ -12,7 +12,6 @@
 #include "CellsGenerator.hpp"
 #include "NoCellCycleModel.hpp"
 #include "VertexBasedCellPopulation.hpp"
-#include "ConstantTargetAreaModifier.hpp"
 #include "OffLatticeSimulation.hpp"
 #include "SmartPointers.hpp"
 #include "FakePetscSetup.hpp"
@@ -102,13 +101,8 @@ public:
     p_force->SetSupercontractileLineTensionParameter(supercontractile_line_tension_multiplier*lambda_bar*pow(k,1.5));
     p_force->SetBoundaryLineTensionParameter(lambda_bar*lambda_bar*pow(k,1.5));
     p_force->SetUseCombinedInterfacesForLineTension(false);
-    
-    
+
     simulation.AddForce(p_force); // Can also add this after initial solve.
-    
-    // Pass in a target area modifier (needed, but not used)
-    MAKE_PTR(ConstantTargetAreaModifier<2>, p_growth_modifier);
-    simulation.AddSimulationModifier(p_growth_modifier);
     
     // Run simulation
     simulation.Solve();

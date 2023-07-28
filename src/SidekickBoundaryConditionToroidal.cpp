@@ -34,7 +34,7 @@ void SidekickBoundaryConditionToroidal::ImposeBoundaryCondition(const std::map<N
   // Set to store boundary nodes
   std::set<unsigned> boundaryNodes = p_static_cast_mesh_toroidal->GetBoundaryNodes();
   // If it was a LHS boundary node, check where it is and fix it
-  for(auto n_index : boundaryNodes)
+  for (auto n_index : boundaryNodes)
   {
     // Get the node
     Node<2>* p_node = this->mpCellPopulation->GetNode(n_index);

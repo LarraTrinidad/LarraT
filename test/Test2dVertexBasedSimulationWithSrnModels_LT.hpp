@@ -1,38 +1,3 @@
-/*
-
-Copyright (c) 2005-2021, University of Oxford.
-All rights reserved.
-
-University of Oxford means the Chancellor, Masters and Scholars of the
-University of Oxford, having an administrative office at Wellington
-Square, Oxford OX1 2JD, UK.
-
-This file is part of Chaste.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
- * Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
- * Neither the name of the University of Oxford nor the names of its
-   contributors may be used to endorse or promote products derived from this
-   software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-*/
-
 #ifndef TESTDELTANOTCHEDGEINTERIORODESIMULATION_HPP_
 #define TESTDELTANOTCHEDGEINTERIORODESIMULATION_HPP_
 
@@ -67,11 +32,11 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "CellSrnModel.hpp"
 
-#include "DeltaNotchEdgeSrnModel.hpp"
-#include "DeltaNotchEdgeTrackingModifier.hpp"
+#include "FtDsEdgeSrnModel.hpp"
+#include "FtDsEdgeTrackingModifier.hpp"
 
-#include "DeltaNotchInteriorSrnModel.hpp"
-#include "DeltaNotchEdgeInteriorTrackingModifier.hpp"
+#include "FtDsInteriorSrnModel.hpp"
+#include "FtDsEdgeInteriorTrackingModifier.hpp"
 
 
 // from Sidekick
@@ -79,7 +44,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "HoneycombVertexMeshGenerator.hpp"
 #include "CellsGenerator.hpp"
 #include "NoCellCycleModel.hpp"
-#include "ConstantTargetAreaModifier.hpp"
 #include "OffLatticeSimulation.hpp"
 #include "FakePetscSetup.hpp"
 #include "ExtrinsicPullModifier.hpp"
@@ -91,7 +55,6 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "MutableVertexMesh.hpp"
 #include "Toroidal2dVertexMesh.hpp"
 #include "Warnings.hpp"
-
 
 static const double M_DT = 0.1;
 static const double M_RELAXATION_TIME = 10; 
@@ -107,12 +70,10 @@ double gamma_bar = 0.04;
 double heterotypic_line_tension_multiplier = 2.0;
 double supercontractile_line_tension_multiplier = 2.0;
 
-
-
 /**
  * These tests check and demonstrate simulation of vertex based models with edge and interior Srn models
  */
-class TestDeltaNotchEdgeOnlyODESimulation_LT : public AbstractCellBasedTestSuite
+class TestFtDsEdgeOnlyODESimulation_LT : public AbstractCellBasedTestSuite
 {
 public:
     /*
@@ -166,12 +127,12 @@ public:
                 initial_conditions.push_back( p_edge_length/total_edge_length * delta_concentration);
                 initial_conditions.push_back( p_edge_length/total_edge_length * notch_concentration);
 
-                MAKE_PTR(DeltaNotchEdgeSrnModel, p_srn_model);
+                MAKE_PTR(FtDsEdgeSrnModel, p_srn_model);
                 p_srn_model->SetInitialConditions(initial_conditions);
                 p_cell_edge_srn_model->AddEdgeSrnModel(p_srn_model);
             }
             //Add interior SRN models to cells
-            MAKE_PTR(DeltaNotchInteriorSrnModel, p_cell_srn_model);
+            MAKE_PTR(FtDsInteriorSrnModel, p_cell_srn_model);
             std::vector<double> zero_conditions(2);
             p_cell_srn_model->SetInitialConditions(zero_conditions);
             p_cell_edge_srn_model->SetInteriorSrnModel(p_cell_srn_model);
@@ -196,14 +157,14 @@ public:
         /* We are now in a position to create and configure the cell-based simulation object, pass a force law to it,
          * and run the simulation.*/
         OffLatticeSimulation<2> simulator(cell_population);
-        simulator.SetOutputDirectory("TestDeltaNotchEdgeInteriorODESimulation_LT");
+        simulator.SetOutputDirectory("TestFtDsEdgeInteriorODESimulation_LT");
         //simulator.SetSamplingTimestepMultiple(10);
         //simulator.SetEndTime(10.0);
 
         /* Update CellData and CellEdgeData so that SRN simulations can run properly */
-        MAKE_PTR(DeltaNotchEdgeInteriorTrackingModifier<2>, p_cell_modifier);
+        MAKE_PTR(FtDsEdgeInteriorTrackingModifier<2>, p_cell_modifier);
         simulator.AddSimulationModifier(p_cell_modifier);
-        MAKE_PTR(DeltaNotchEdgeTrackingModifier<2>, p_edge_modifier);
+        MAKE_PTR(FtDsEdgeTrackingModifier<2>, p_edge_modifier);
         simulator.AddSimulationModifier(p_edge_modifier);
 
         MAKE_PTR(ForceForScenario4<2>, p_force);
@@ -292,7 +253,7 @@ public:
                 initial_conditions.push_back( p_edge_length/total_edge_length * delta_concentration);
                 initial_conditions.push_back( p_edge_length/total_edge_length * notch_concentration);
 
-                MAKE_PTR(DeltaNotchEdgeSrnModel, p_srn_model);
+                MAKE_PTR(FtDsEdgeSrnModel, p_srn_model);
                 p_srn_model->SetInitialConditions(initial_conditions);
                 p_cell_edge_srn_model->AddEdgeSrnModel(p_srn_model);
             }
@@ -318,12 +279,12 @@ public:
         /* We are now in a position to create and configure the cell-based simulation object, pass a force law to it,
          * and run the simulation. */
         OffLatticeSimulation<2> simulator(cell_population);
-        simulator.SetOutputDirectory("TestDeltaNotchEdgeOnlyODESimulation_LT");
+        simulator.SetOutputDirectory("TestFtDsEdgeOnlyODESimulation_LT");
         //simulator.SetSamplingTimestepMultiple(10);
         //simulator.SetEndTime(10.0);
 
         /* Update CellEdgeData so that SRN simulations can run properly */
-        MAKE_PTR(DeltaNotchEdgeTrackingModifier<2>, p_modifier);
+        MAKE_PTR(FtDsEdgeTrackingModifier<2>, p_modifier);
         simulator.AddSimulationModifier(p_modifier);
 
 
