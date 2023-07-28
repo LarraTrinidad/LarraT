@@ -41,9 +41,9 @@ FtDsEdgeOdeSystem::FtDsEdgeOdeSystem(std::vector<double> stateVariables)
 
     this->mParameters.push_back(0.0);
     //By default zero. If no interior SRN model is specified, interior delta/notch is zero
-   // this->mParameters.push_back(0.0);
-   // this->mParameters.push_back(0.0);
-   // this->mParameters.push_back(0.0);
+    this->mParameters.push_back(0.0);
+    this->mParameters.push_back(0.0);
+    this->mParameters.push_back(0.0);
 
 
     if (stateVariables != std::vector<double>())
@@ -62,16 +62,6 @@ FtDsEdgeOdeSystem::~FtDsEdgeOdeSystem()
 void FtDsEdgeOdeSystem::EvaluateYDerivatives(double time, const std::vector<double>& rY, std::vector<double>& rDY)
 {
 
-    //const double notch = rY[0];
-    //const double delta = rY[1];
-    //const double neigh_delta = this->mParameters[0]; // Shorthand for "this->mParameter("neighbor delta");"
-    //const double interior_delta = this->mParameters[1];
-    //const double interior_notch = this->mParameters[2];
-    // The next two lines define the ODE system by Collier et al. (1996), except that we use neighbour Delta directly
-    //That is, neighbour activates notch, which can be degraded and trafficked from cytoplasm to this edge
-    //rDY[0] = neigh_delta*neigh_delta/(0.01 + neigh_delta*neigh_delta) - notch+0.1*interior_notch;  // d[Notch]/dt
-    // Delta is inhibited by notch in this this
-    //rDY[1] = 1.0/(1.0 + 100.0*notch*notch) - delta+0.1*interior_delta;// d[Delta]/dt
 
     /** Using the model in Hale et al. (2015) - there are four different proteins:
    unphosphorylated Ft (Ft), phosphorylated Ds (Ds), unphosphorylated Ds (Ds), and phosphorylated Ds (DsP)
@@ -97,9 +87,9 @@ void FtDsEdgeOdeSystem::EvaluateYDerivatives(double time, const std::vector<doub
     
 
     const double neigh_delta = this->mParameters[0]; // Shorthand for "this->mParameter("neighbor delta");"
-    const double neigh_notch = this->mParameters[0];
-    const double neigh_DsP = this->mParameters[0];
-    const double neigh_FtP = this->mParameters[0];
+    const double neigh_notch = this->mParameters[1];
+    const double neigh_DsP = this->mParameters[2];
+    const double neigh_FtP = this->mParameters[3];
 
     //const double interior_delta = this->mParameters[1];
     //const double interior_notch = this->mParameters[2];
@@ -141,18 +131,6 @@ void FtDsEdgeOdeSystem::EvaluateYDerivatives(double time, const std::vector<doub
 
     rDY[11] =  neigh_delta * DsP - 4 * D_; // d[D_]/dt
 
-
-  /*
-
-    rDY[0] = ka_on * FtP * neigh_Ds - ka_off * Notch; // d[A]/dt
-    rDY[1] = kc_on * Ft * neigh_Ds - kc_off * Delta; // d[C]/dt
-
-    // The next two lines define the ODE system by Collier et al. (1996), except that we use neighbour Delta directly
-    //That is, neighbour activates notch, which can be degraded and trafficked from cytoplasm to this edge
-    //rDY[0] = notch+0.1*interior_notch;  // d[Notch]/dt
-    // Delta is inhibited by notch in this this
-    //rDY[1] = interior_delta*neigh_delta-delta; // d[Delta]/dt /// was /100.0
-*/
 }
 
 template<>

@@ -46,11 +46,17 @@ public:
 
             // Initialise edge-based SRN
             auto p_cell_edge_srn_model = new CellSrnModel();
+<<<<<<< HEAD:test/TestFtDsSimulations.hpp
             auto centroid_x = p_mesh->GetCentroidOfElement(index)[0];
             auto centroid_y = p_mesh->GetCentroidOfElement(index)[1];
 
             // Initialise protein concentrations
             ///\todo why are notch and delta specified?
+=======
+            auto centroid_x = p_mesh->GetCentroidOfElement(elem_index)[0];
+            auto centroid_y = p_mesh->GetCentroidOfElement(elem_index)[1];
+            /* We choose to initialise the total concentrations of DsP and FtP to reflect a radial Fj gradient, and Ds and Ft to oppose it */
+>>>>>>> d011ac11d1325cef62adf074e44bee35c91f5f16:test/Test2dVertexBasedSimulationWithSrnModels_LT_ODE.hpp
             auto notch_concentration = -((5+centroid_x * centroid_x) * (5+(centroid_y -1.5) * (centroid_y -1.5))) +1.5+216; // 50*(1-((80 + 10 * centroid)/ (80 + 10 * 6)));
             auto delta_concentration = -((5+centroid_x * centroid_x) * (5+(centroid_y -1.5) * (centroid_y -1.5))) +1.5+216; // 50*(1-((80 + 10 * elem_index)) / (80 + 10 * 3));
             auto DsP_concentration = (5+centroid_x * centroid_x) * (5+(centroid_y -1.5) * (centroid_y -1.5)) - 1.5; //50*((80 + 10 * centroid) / (80 + 10 * 6));
@@ -125,7 +131,28 @@ public:
         MAKE_PTR(FtDsEdgeTrackingModifier<2>, p_edge_modifier);
         simulator.AddSimulationModifier(p_edge_modifier);
 
+<<<<<<< HEAD:test/TestFtDsSimulations.hpp
         // Run the simulation by calling Solve()
+=======
+        MAKE_PTR(NagaiHondaForce<2>, p_force);
+        simulator.AddForce(p_force);
+
+        simulator.SetOutputDivisionLocations(true);
+        // Add division rule
+        boost::shared_ptr<ShortAxisVertexBasedDivisionRule<2> > p_division_rule(new ShortAxisVertexBasedDivisionRule<2>());
+        cell_population.SetVertexBasedDivisionRule(p_division_rule);
+
+        /* This modifier assigns target areas to each cell, which are required by the {{{NagaiHondaForce}}}.
+         */
+        MAKE_PTR(SimpleTargetAreaModifier<2>, p_growth_modifier);
+        simulator.AddSimulationModifier(p_growth_modifier);
+
+        
+        simulator.SetSamplingTimestepMultiple(1.0);
+        //simulator.SetDt(0.1);
+        simulator.SetEndTime(1.0); // error when this is larger than 1.0
+
+>>>>>>> d011ac11d1325cef62adf074e44bee35c91f5f16:test/Test2dVertexBasedSimulationWithSrnModels_LT_ODE.hpp
         simulator.Solve();
     }
 
@@ -152,7 +179,7 @@ public:
             /* Initialise edge based SRN */
             auto p_cell_edge_srn_model = new CellSrnModel();
 
-            /* We choose to initialise the total concentrations as follows */
+            /* We choose to initialise the total concentrations as in Eman's initial conditions */
 
             auto notch_concentration = 50*(1-((80 + 10 * elem_index) / (80 + 10 * 6)));
             auto delta_concentration = 50*(1-((80 + 10 * elem_index) / (80 + 10 * 6)));
