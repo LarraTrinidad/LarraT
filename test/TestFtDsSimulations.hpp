@@ -7,6 +7,7 @@
 #include "CellSrnModel.hpp"
 #include "CheckpointArchiveTypes.hpp"
 #include "FakePetscSetup.hpp"
+#include "FarhadifarForce.hpp"
 #include "FtDsEdgeSrnModel.hpp"
 #include "FtDsEdgeTrackingModifier.hpp"
 #include "HoneycombVertexMeshGenerator.hpp"
@@ -25,7 +26,7 @@ public:
 
     void TestFtDsPolarisationWithoutCellDivision()
     {
-        // Create regular heaxgonal mesh object
+        // Create regular hexagonal mesh object
         HoneycombVertexMeshGenerator generator(5, 3);
         MutableVertexMesh<2, 2>* p_mesh = generator.GetMesh();
 
@@ -121,7 +122,7 @@ public:
 
     void TestFtDsPolarisationWithCellDivision()
     {
-        // Create regular heaxgonal mesh object
+        // Create regular hexagonal mesh object
         HoneycombVertexMeshGenerator generator(5, 3);
         MutableVertexMesh<2, 2>* p_mesh = generator.GetMesh();
 
@@ -208,6 +209,10 @@ public:
         // Create and pass tracking modifiers to simulation
         MAKE_PTR(FtDsEdgeTrackingModifier<2>, p_modifier);
         simulator.AddSimulationModifier(p_modifier);
+
+        // Create and pass force law to simulation
+        MAKE_PTR(FarhadifarForce<2>, p_force);
+        simulator.AddForce(p_force);
 
         // Create and pass target area growth rule to simulation
         MAKE_PTR(SimpleTargetAreaModifier<2>, p_growth_modifier);
