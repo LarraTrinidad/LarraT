@@ -153,7 +153,7 @@ void FtDsEdgeTrackingModifier<DIM>::UpdateCellData(
            double this_A = A_vec[y1];
            A_vec[i] = this_A;
 
-           double this_B = A_vec[y1];
+           double this_B = B_vec[y1];
            B_vec[i] = this_B;
 
            double this_C = C_vec[y1];
@@ -175,7 +175,7 @@ void FtDsEdgeTrackingModifier<DIM>::UpdateCellData(
            neigh_D_vec[i] = this_neigh_D;
         }
 
-        // Note that the state variables must be in the same order as listed in FtDsOdeSystem
+        // The state variables must be in the same order as in FtDsOdeSystem
         cell_iter->GetCellEdgeData()->SetItem("edge Ds", Ds_vec);
         cell_iter->GetCellEdgeData()->SetItem("edge Ft", Ft_vec);
         cell_iter->GetCellEdgeData()->SetItem("edge DsP", DsP_vec);

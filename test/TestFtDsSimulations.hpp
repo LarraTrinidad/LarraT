@@ -43,25 +43,25 @@ public:
 
             // Initialise edge-based SRN
             auto p_cell_edge_srn_model = new CellSrnModel();
-            auto centroid_x = p_mesh->GetCentroidOfElement(index)[0];
-            auto centroid_y = p_mesh->GetCentroidOfElement(index)[1];
+            double centroid_x = p_mesh->GetCentroidOfElement(index)[0];
+            double centroid_y = p_mesh->GetCentroidOfElement(index)[1];
 
             /*
              * Initialise the total concentrations of DsP and FtP to reflect a 
              * radial Fj gradient, and Ds and Ft to oppose it.
              */
-            auto Ds_concentration = -((5 + centroid_x * centroid_x) * (5 + (centroid_y -1.5) * (centroid_y -1.5))) + 1.5 + 216;
-            auto Ft_concentration = -((5 + centroid_x * centroid_x) * (5 + (centroid_y -1.5) * (centroid_y -1.5))) + 1.5 + 216;
-            auto DsP_concentration = (5 + centroid_x * centroid_x) * (5 + (centroid_y -1.5) * (centroid_y -1.5)) - 1.5;
-            auto FtP_concentration = (5 + centroid_x * centroid_x) * (5 + (centroid_y -1.5) * (centroid_y -1.5)) - 1.5;
-            auto A_concentration = 0;
-            auto B_concentration = 0;
-            auto C_concentration = 0;
-            auto D_concentration = 0;
-            auto neigh_A_concentration = 0;
-            auto neigh_B_concentration = 0;
-            auto neigh_C_concentration = 0;
-            auto neigh_D_concentration = 0;
+            double Ds_concentration = -((5 + centroid_x * centroid_x) * (5 + (centroid_y -1.5) * (centroid_y -1.5))) + 1.5 + 216;
+            double Ft_concentration = -((5 + centroid_x * centroid_x) * (5 + (centroid_y -1.5) * (centroid_y -1.5))) + 1.5 + 216;
+            double DsP_concentration = (5 + centroid_x * centroid_x) * (5 + (centroid_y -1.5) * (centroid_y -1.5)) - 1.5;
+            double FtP_concentration = (5 + centroid_x * centroid_x) * (5 + (centroid_y -1.5) * (centroid_y -1.5)) - 1.5;
+            double A_concentration = 0;
+            double B_concentration = 0;
+            double C_concentration = 0;
+            double D_concentration = 0;
+            double neigh_A_concentration = 0;
+            double neigh_B_concentration = 0;
+            double neigh_C_concentration = 0;
+            double neigh_D_concentration = 0;
 
             double total_edge_length = 0.0;
             auto p_element = p_mesh->GetElement(index);
@@ -143,18 +143,18 @@ public:
             auto p_cell_edge_srn_model = new CellSrnModel();
 
             // Initialise the total concentrations as in Eman's work
-            auto Ds_concentration = 50*(1 - ((80 + 10 * index) / (80 + 10 * 6)));
-            auto Ft_concentration = 50*(1 - ((80 + 10 * index) / (80 + 10 * 6)));
-            auto DsP_concentration = 50*((80 + 10 * index) / (80 + 10 * 6));
-            auto FtP_concentration = 50*((80 + 10 * index) / (80 + 10 * 6));
-            auto A_concentration = 0;
-            auto B_concentration = 0;
-            auto C_concentration = 0;
-            auto D_concentration = 0;
-            auto neigh_A_concentration = 0;
-            auto neigh_B_concentration = 0;
-            auto neigh_C_concentration = 0;
-            auto neigh_D_concentration = 0;
+            double Ds_concentration = 50*(1 - ((80 + 10 * index) / (80 + 10 * 6)));
+            double Ft_concentration = 50*(1 - ((80 + 10 * index) / (80 + 10 * 6)));
+            double DsP_concentration = 50*((80 + 10 * index) / (80 + 10 * 6));
+            double FtP_concentration = 50*((80 + 10 * index) / (80 + 10 * 6));
+            double A_concentration = 0;
+            double B_concentration = 0;
+            double C_concentration = 0;
+            double D_concentration = 0;
+            double neigh_A_concentration = 0;
+            double neigh_B_concentration = 0;
+            double neigh_C_concentration = 0;
+            double neigh_D_concentration = 0;
 
             double total_edge_length = 0.0;
             auto p_element = p_mesh->GetElement(index);
