@@ -10,6 +10,15 @@
 template<unsigned DIM>
 class FtDsEdgeTrackingModifier : public AbstractCellBasedSimulationModifier<DIM,DIM>
 {
+private:
+
+    /**
+     * Diffusion coefficient of unbound protein concentrations within the plasma 
+     * membrane. Stored in this class, rather than in FtDsEdgeSrnModel or in 
+     * FtDsEdgeOdeSystem, since it is only used in this class. Initialised to 
+     * 0.03 in the constructor.
+     */
+    double mUnboundProteinDiffusionCoefficient;
 
     /** Needed for serialization. */
     friend class boost::serialization::access;
@@ -24,6 +33,7 @@ class FtDsEdgeTrackingModifier : public AbstractCellBasedSimulationModifier<DIM,
     void serialize(Archive & archive, const unsigned int version)
     {
         archive & boost::serialization::base_object<AbstractCellBasedSimulationModifier<DIM,DIM> >(*this);
+        archive & mUnboundProteinDiffusionCoefficient;
     }
 
 public:
@@ -63,6 +73,20 @@ public:
      * @param rCellPopulation reference to the cell population
      */
     void UpdateCellData(AbstractCellPopulation<DIM,DIM>& rCellPopulation);
+
+    /**
+     * @return mUnboundProteinDiffusionCoefficient.
+     */
+    double GetUnboundProteinDiffusionCoefficient();
+
+    /**
+     * Set mUnboundProteinDiffusionCoefficient.
+     * 
+     * @param unboundProteinDiffusionCoefficient the new value of 
+     *     mUnboundProteinDiffusionCoefficient.
+     */
+    void SetUnboundProteinDiffusionCoefficient(
+        double unboundProteinDiffusionCoefficient);
 
     /**
      * Overridden OutputSimulationModifierParameters() method.
