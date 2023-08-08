@@ -70,10 +70,9 @@ void AbEdgeSrnModel::InitialiseDaughterCell()
     assert(mpOdeSystem != nullptr);
     assert(mpCell != nullptr);
 
-    // A new edge is initialised with zero concentrations
-    ///\todo is this correct?
-    mpOdeSystem->SetStateVariable("A", 0.0);
-    mpOdeSystem->SetStateVariable("B", 0.0);
+    // A new edge is initialised with A = 1.0 and B = 1.0 (as seen in experiments - new junctions accumulate proteins quickly)
+    mpOdeSystem->SetStateVariable("A", 1.0);
+    mpOdeSystem->SetStateVariable("B", 1.0);
     mpOdeSystem->SetStateVariable("C", 0.0);
     mpOdeSystem->SetStateVariable("neigh_C", 0.0);
 
