@@ -60,6 +60,8 @@ void AbEdgeTrackingModifier<DIM>::UpdateCellData(
         std::vector<double> B_old;
         std::vector<double> edge_lengths;
 
+        
+        //\ looks like the new cell edges (from junctional rearrangements after cell division) don't accumulate protein - new junctions aren't being taken into account in this for loop?
         for (unsigned edge_index = 0 ; edge_index  < num_edges; ++edge_index)
         {  
             // Store the current unbound protein concentrations on this edge
