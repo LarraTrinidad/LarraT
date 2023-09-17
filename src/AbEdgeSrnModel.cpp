@@ -70,14 +70,15 @@ void AbEdgeSrnModel::InitialiseDaughterCell()
     assert(mpOdeSystem != nullptr);
     assert(mpCell != nullptr);
 
-    // A new edge is initialised with A = 1.0 and B = 1.0 (as seen in experiments - new junctions accumulate proteins quickly)
+    // A new edge is initialised with zero concentrations
+    ///\todo is this correct?
     mpOdeSystem->SetStateVariable("A", 1.0);
     mpOdeSystem->SetStateVariable("B", 1.0);
     mpOdeSystem->SetStateVariable("C", 0.0);
     mpOdeSystem->SetStateVariable("neigh_C", 0.0);
 
-    mpOdeSystem->SetParameter("neighbour A", 0.0);
-    mpOdeSystem->SetParameter("neighbour B", 0.0);
+    mpOdeSystem->SetParameter("neighbour A", 1.0);
+    mpOdeSystem->SetParameter("neighbour B", 1.0);
 }
 
 void AbEdgeSrnModel::UpdateAb()
@@ -180,7 +181,7 @@ void AbEdgeSrnModel::AddShrunkEdgeSrn(AbstractSrnModel* pShrunkEdgeSrn)
      * remaining half are split between neighbouring junctions. Hence we add 
      * 1/4 of SRN variables.
      */
-    AddSrnQuantities(pShrunkEdgeSrn, 0.25);
+    AddSrnQuantities(pShrunkEdgeSrn, 0.25); //0.25
 }
 
 void AbEdgeSrnModel::AddMergedEdgeSrn(AbstractSrnModel* pMergedEdgeSrn)

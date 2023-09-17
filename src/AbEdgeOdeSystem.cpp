@@ -21,7 +21,7 @@ AbEdgeOdeSystem::AbEdgeOdeSystem(std::vector<double> stateVariables)
         SetDefaultInitialCondition(i, 0.0);
     }
 
-    for (unsigned i = 0; i < 4; ++i)
+    for (unsigned i = 0; i < 2; ++i)
     {
         this->mParameters.push_back(0.0);
     }
@@ -56,11 +56,11 @@ void AbEdgeOdeSystem::EvaluateYDerivatives(
 
     const double neigh_A = this->mParameters[0];
     const double neigh_B = this->mParameters[1];
-    const double k_on = this->mParameters[2];
-    const double k_off = this->mParameters[3];
+    //const double k_on = this->mParameters[2];
+    //const double k_off = this->mParameters[3];
 
-    rDY[0] = -k_on*A*neigh_B + k_off*neigh_C;
-    rDY[1] = -k_on*neigh_A*B + k_off*C;
+    rDY[0] = -A*neigh_B + neigh_C;
+    rDY[1] = -neigh_A*B + C;
     rDY[2] = -rDY[1];
     rDY[3] = -rDY[0];
 }
@@ -91,11 +91,11 @@ void CellwiseOdeSystemInformation<AbEdgeOdeSystem>::Initialise()
     this->mParameterNames.push_back("neighbour B");
     this->mParameterUnits.push_back("non-dim");
 
-    this->mParameterNames.push_back("k_on");
-    this->mParameterUnits.push_back("non-dim");
+    //this->mParameterNames.push_back("k_on");
+    //this->mParameterUnits.push_back("non-dim");
 
-    this->mParameterNames.push_back("k_off");
-    this->mParameterUnits.push_back("non-dim");
+    //this->mParameterNames.push_back("k_off");
+    //this->mParameterUnits.push_back("non-dim");
 
     this->mInitialised = true;
 }

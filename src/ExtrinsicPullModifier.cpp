@@ -34,7 +34,7 @@ void ExtrinsicPullModifier::UpdateAtEndOfTimeStep(
             // Respect the SidekickBoundaryCondition...
             if (p_node->rGetLocation()[0] > x_min + epsilon)
             {
-                p_node->rGetModifiableLocation()[0] += speed*dt;
+                p_node->rGetModifiableLocation()[0] -= speed*dt;
             }
         }
     }

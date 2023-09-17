@@ -69,11 +69,11 @@ void FtDsEdgeSrnModel::InitialiseDaughterCell()
     assert(mpOdeSystem != nullptr);
     assert(mpCell != nullptr);
 
-    // A new edge is initialised with zero concentrations
-    mpOdeSystem->SetStateVariable("Ds", 0.0);
-    mpOdeSystem->SetStateVariable("Ft", 0.0);
-    mpOdeSystem->SetStateVariable("DsP", 0.0);
-    mpOdeSystem->SetStateVariable("FtP", 0.0);
+    // A new edge is initialised with concentration of 0.25 for unbound Ds, Ft, DsP, and FtP
+    mpOdeSystem->SetStateVariable("Ds", 0.25);
+    mpOdeSystem->SetStateVariable("Ft", 0.25);
+    mpOdeSystem->SetStateVariable("DsP", 0.25);
+    mpOdeSystem->SetStateVariable("FtP", 0.25);
     mpOdeSystem->SetStateVariable("A", 0.0);
     mpOdeSystem->SetStateVariable("B", 0.0);
     mpOdeSystem->SetStateVariable("C", 0.0);

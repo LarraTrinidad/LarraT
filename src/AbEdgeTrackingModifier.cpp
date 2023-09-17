@@ -58,6 +58,7 @@ void AbEdgeTrackingModifier<DIM>::UpdateCellData(
         // Cell's edge data
         std::vector<double> A_old;
         std::vector<double> B_old;
+        std::vector<double> C_old;
         std::vector<double> edge_lengths;
 
         
@@ -68,6 +69,7 @@ void AbEdgeTrackingModifier<DIM>::UpdateCellData(
             auto p_edge_srn = boost::static_pointer_cast<AbEdgeSrnModel>(p_cell_srn->GetEdgeSrn(edge_index));
             A_old.push_back(p_edge_srn->GetA());
             B_old.push_back(p_edge_srn->GetB());
+            C_old.push_back(p_edge_srn->GetC());
 
             // Store this edge's length
             auto p_element = p_population->GetElementCorrespondingToCell(*cell_iter);
@@ -81,21 +83,41 @@ void AbEdgeTrackingModifier<DIM>::UpdateCellData(
          */
         std::vector<double> A_new(num_edges);
         std::vector<double> B_new(num_edges);
-        for (unsigned edge_index = 0 ; edge_index  < num_edges; ++edge_index)
+        std::vector<double> C_new(num_edges);
+
+           for (unsigned edge_index = 0 ; edge_index  < num_edges; ++edge_index)
         {
+           auto p_edge_srn = boost::static_pointer_cast<AbEdgeSrnModel>(p_cell_srn->GetEdgeSrn(edge_index));
            unsigned prev_index = (edge_index == 0) ? num_edges - 1 : edge_index - 1;
            unsigned next_index = (edge_index == num_edges - 1) ? 0 : edge_index + 1;
 
            ///\todo consider validity of diffusive flux expression
            double dx = 0.5 * (edge_lengths[prev_index] + edge_lengths[edge_index]);
            double dt = SimulationTime::Instance()->GetTimeStep();
-           A_new[edge_index] = A_old[edge_index] + D*(A_old[prev_index] - 2*A_old[edge_index] + A_old[next_index])*dt/(dx*dx);
-           B_new[edge_index] = B_old[edge_index] + D*(B_old[prev_index] - 2*B_old[edge_index] + B_old[next_index])*dt/(dx*dx);
+           double time_elapsed = SimulationTime::Instance()->GetTimeStepsElapsed();
+           /* This if statement must be used as UpdateCellData is called for setup solve
+             and at the end of each time step. Thus if no time has elapsed diffusion should
+             not be occuring */
+             if (time_elapsed == 0){
+              A_new[edge_index] = A_old[edge_index];
+              B_new[edge_index] = B_old[edge_index];
+              C_new[edge_index] = C_old[edge_index];
+             } else {
+              A_new[edge_index] = A_old[edge_index] + D*(A_old[prev_index] - 2*A_old[edge_index] + A_old[next_index])*dt/(dx*dx);
+              B_new[edge_index] = B_old[edge_index] + D*(B_old[prev_index] - 2*B_old[edge_index] + B_old[next_index])*dt/(dx*dx);
+              C_new[edge_index] = C_old[edge_index];
+             }
+             
+             p_edge_srn->SetA(A_new[edge_index]);
+             p_edge_srn->SetB(B_new[edge_index]);
+             p_edge_srn->SetC(C_new[edge_index]);
         }
+        
 
         // Note: state variables must be in the same order as in AbOdeSystem
         cell_iter->GetCellEdgeData()->SetItem("edge A", A_new);
         cell_iter->GetCellEdgeData()->SetItem("edge B", B_new);
+        cell_iter->GetCellEdgeData()->SetItem("edge C", C_new);
     }
 
     // After the edge data is filled, fill the edge neighbour data
