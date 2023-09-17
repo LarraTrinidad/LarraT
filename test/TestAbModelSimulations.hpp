@@ -20,6 +20,8 @@
 #include "VertexBasedCellPopulation.hpp"
 #include "WildTypeCellMutationState.hpp"
 
+
+
 class TestAbModelSimulations : public AbstractCellBasedTestSuite
 {
 public:
@@ -42,8 +44,8 @@ public:
 
             // Initial conditions on each edge
             std::vector<double> initial_conditions;
-            initial_conditions.push_back(0.0); // A
-            initial_conditions.push_back(0.0); // B
+            initial_conditions.push_back(1.0); // A
+            initial_conditions.push_back(1.0); // B
             initial_conditions.push_back(0.0); // C
             initial_conditions.push_back(0.0); // neigh_C
 
@@ -70,8 +72,8 @@ public:
         // Create cell-based simulation object
         OffLatticeSimulation<2> simulator(cell_population);
         simulator.SetOutputDirectory("TestAbModelWithoutCellDivision");
-        simulator.SetDt(0.01);
-        simulator.SetSamplingTimestepMultiple(100);
+        simulator.SetDt(0.1);
+        simulator.SetSamplingTimestepMultiple(10);
         simulator.SetEndTime(10.0);
 
         // Create and pass tracking modifier to simulation
@@ -98,12 +100,13 @@ public:
             BernoulliTrialCellCycleModel* p_cc_model = new BernoulliTrialCellCycleModel();
             p_cc_model->SetDimension(2);
             p_cc_model->SetBirthTime(-1.0);
-            p_cc_model->SetDivisionProbability(0.1);
+            p_cc_model->SetDivisionProbability(0.001);
+
 
             // Initial conditions on each edge
             std::vector<double> initial_conditions;
-            initial_conditions.push_back(0.0); // A
-            initial_conditions.push_back(0.0); // B
+            initial_conditions.push_back(1.0); // A
+            initial_conditions.push_back(1.0); // B
             initial_conditions.push_back(0.0); // C
             initial_conditions.push_back(0.0); // neigh_C
 
@@ -133,7 +136,7 @@ public:
         simulator.SetOutputDirectory("TestAbModelWithCellDivision");
         simulator.SetDt(0.01);
         simulator.SetSamplingTimestepMultiple(100);
-        simulator.SetEndTime(10.0);
+        simulator.SetEndTime(10.0); //10
 
         // Create and pass tracking modifiers to simulation
         MAKE_PTR(AbEdgeTrackingModifier<2>, p_modifier);
@@ -145,7 +148,7 @@ public:
 
         // Create and pass target area growth rule to simulation
         MAKE_PTR(SimpleTargetAreaModifier<2>, p_growth_modifier);
-        p_growth_modifier->SetGrowthDuration(10.0);
+        p_growth_modifier->SetGrowthDuration(0.01);
         simulator.AddSimulationModifier(p_growth_modifier);
 
         // Create and pass cell division rule to simulation
