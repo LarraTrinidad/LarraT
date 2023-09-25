@@ -1,0 +1,159 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+
+library(ggplot2)
+library(ggpubr)
+library(ggsignif)
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(reshape2)
+library(matrixStats)
+library(readr)
+library(tidyverse)
+library(broom)
+library(msm)
+
+
+
+
+
+
+
+compare <- read_csv("Comparing1.csv")
+compare
+
+ggplot(data = compare, aes(x=Name, y=ymax, fill=Name)) + geom_boxplot() + ggsignif::geom_signif(comparisons = list(c("Ft_+_Horizontal", "Ft_dpy_Horizontal"),c("Ft_+_Horizontal", "Ft_dachs_Horizontal"), c("Ft_dpy_Horizontal","Ft_dachs_Horizontal")),map_signif_level = FALSE, y_position=c(1.1,1.2,1.3)) + ylab("y_max") + theme(text=element_text(size=15), element_line(size=0.01)) + theme(axis.text.x = element_text(angle = 55, vjust=1, hjust=1)) + scale_fill_brewer(palette="Pastel1") + stat_summary(fun=mean, geom="text", col="darkred", vjust=1.5,aes(label=paste("Mean:", round(..y..,digits=2)))) + geom_point()
+
+#ymax <- ggplot(data = compare, aes(x=Name, y=ymax, fill=Name)) + geom_boxplot() + ggsignif::geom_signif(comparisons = list(c("Ft_H", "Ft_V"),c("Ft_H", "Ft_dpy_H"), c("Ft_dpy_H","Ft_dpy_V"),c("Ft_V","Ft_dpy_V")), map_signif_level = FALSE) + ylab("y_max") + theme(text=element_text(size=15), element_line(size=0.01)) + theme(axis.text.x = element_text(angle = 55, vjust=1, hjust=1)) + scale_fill_brewer(palette="Pastel1") + stat_summary(fun=mean, geom="text", col="darkred", vjust=1.5,aes(label=paste("Mean:", round(..y..,digits=2)))) + geom_point()
+
+my_comparisons_1 <- list(c("Ft_+_Horizontal", "Ft_dpy_Horizontal"),c("Ft_+_Horizontal", "Ft_dachs_Horizontal"), c("Ft_dpy_Horizontal","Ft_dachs_Horizontal"))
+#method1 <- "anova" 
+#method2 <- "t.test" 
+
+#ymax + ggsignif::geom_signif(comparisons = my_comparisons_1, method = method2, label = "p.format", na.rm = TRUE, map_signif_level = FALSE, y_position = c(1.1,1.2,1.3,1.4))
+
+
+
+
+
+
+
+ggplot(data = compare, aes(x=Name, y=y0, fill=Name)) + geom_boxplot() + geom_signif(comparisons = my_comparisons_1, map_signif_level = TRUE, y_position=c(610,630,650)) + ylab("y_0") + theme(text=element_text(size=15), element_line(size=0.01)) + theme(axis.text.x = element_text(angle = 55, vjust=1, hjust=1)) + scale_fill_brewer(palette="Pastel1")+ stat_summary(fun=mean, geom="text", col="darkred", vjust=1.5,aes(label=paste("Mean:", round(..y..,digits=1)))) + geom_point()
+
+
+
+
+ggplot(data = compare, aes(x=Name, y=Unstable_Amount, fill=Name)) + geom_boxplot() + geom_signif(comparisons = my_comparisons_1, map_signif_level = TRUE, y_position=c(600,620,640)) + ylab("Unstable_Amount") + theme(text=element_text(size=15), element_line(size=0.01)) + theme(axis.text.x = element_text(angle = 55, vjust=1, hjust=1)) + scale_fill_brewer(palette="Pastel1") + stat_summary(fun=mean, geom="text", col="darkred", vjust=1.5,aes(label=paste("Mean:", round(..y..,digits=1)))) + geom_point()
+
+ggplot(data = compare, aes(x=Name, y=Stable_Amount, fill=Name)) + geom_boxplot() + geom_signif(comparisons = my_comparisons_1, map_signif_level = TRUE, y_position=c(400,420,440)) + ylab("Stable_Amount") + theme(text=element_text(size=15), element_line(size=0.01)) + theme(axis.text.x = element_text(angle = 55, vjust=1, hjust=1)) + scale_fill_brewer(palette="Pastel1")+ stat_summary(fun=mean, geom="text", col="darkred", vjust=1.5,aes(label=paste("Mean:", round(..y..,digits=1)))) + geom_point()
+
+
+
+stack <- data.frame("Name" = compare$Name, "Unstable_Amount"= compare$Unstable_Amount, "Stable_Amount" = compare$Stable_Amount)
+stack
+
+stacked1 <- data.frame("Name" = stack$Name, "Type" = "Stable", "Amount" = stack$Stable_Amount)
+stacked2 <- data.frame("Name" = stack$Name, "Type" = "Unstable", "Amount" = stack$Unstable_Amount)
+stacked <- rbind(stacked1, stacked2)
+
+
+my_sum_stable_overall <- stacked %>%
+  group_by(Name, Type) %>%
+  dplyr::summarise(n=n(),
+            mean = mean(Amount),
+            sd = sd(Amount, na.rm=TRUE)) %>%
+  mutate(se = sd/sqrt(n)) %>%
+  mutate(ic=se*qt((1-0.05)/2 + .5, n-1))
+my_sum_stable_overall
+N <- my_sum_stable_overall$n[1]
+
+#within(my_sum_stable_overall, mean2 <- ave(mean, Name, FUN=cumsum))
+
+Y <- my_sum_stable_overall %>% mutate(mean3 = cumsum(mean)) 
+Y
+X <- ggplot(Y, aes(x=Name, y=mean, fill = factor(Type, levels=c("Unstable", "Stable")))) + geom_bar(stat = "identity")  + xlab("Name") + ylab("Amount") + theme_minimal() + ggtitle(paste("Stable and unstable amounts"))
+X + geom_errorbar(aes(ymin = mean3 - se, ymax = mean3 + se), width=0.25) + geom_signif(comparisons = my_comparisons_1, map_signif_level = TRUE, y_position=c(700,710,720)) + geom_point()
+
+
+ggplot(data = compare, aes(x=Name, y=Rate_Constant, fill=Name)) + geom_boxplot() + geom_signif(comparisons = my_comparisons_1, map_signif_level = TRUE, y_position=c(0.1,0.11,0.12)) + ylab("Rate Constant") + theme(text=element_text(size=15), element_line(size=0.01)) + theme(axis.text.x = element_text(angle = 55, vjust=1, hjust=1)) + scale_fill_brewer(palette="Pastel1") + stat_summary(fun=mean, geom="text", col="darkred", vjust=1.5,aes(label=paste("Mean:", round(..y..,digits=1)))) + geom_point()
+
+ggplot(data = compare, aes(x=Name, y=Time_Constant, fill=Name)) + geom_boxplot() + geom_signif(comparisons = my_comparisons_1, map_signif_level = TRUE, y_position=c(270,290,310)) + ylab("Time Constant") + theme(text=element_text(size=15), element_line(size=0.01)) + theme(axis.text.x = element_text(angle = 55, vjust=1, hjust=1)) + scale_fill_brewer(palette="Pastel1")+ stat_summary(fun=mean, geom="text", col="darkred", vjust=1.5,aes(label=paste("Mean:", round(..y..,digits=1)))) + geom_point()
+
+ggplot(data = compare, aes(x=Name, y=Half_Life, fill=Name)) + geom_boxplot() + geom_signif(comparisons = my_comparisons_1, map_signif_level = TRUE, y_position=c(270,290,310)) + ylab("Half-Life") + theme(text=element_text(size=15), element_line(size=0.01)) + theme(axis.text.x = element_text(angle = 55, vjust=1, hjust=1)) + scale_fill_brewer(palette="Pastel1")+ stat_summary(fun=mean, geom="text", col="darkred", vjust=1.5,aes(label=paste("Mean:", round(..y..,digits=1)))) + geom_point()
+
+
+joined <- read_csv("Combined_Plots.csv")
+
+joined
+qplot(t, y_ave, data=joined, geom = 'point', color = Genotype) + geom_point(aes(color = Genotype)) + geom_line(aes(y=.fitted, color = Genotype)) + ylab("Average Normalised Intensity") + xlab("Time(s)") + labs(title= "One-phase exponential fit of average normalised intensity") + theme_minimal() +
+  geom_errorbar(aes(x=t, ymin = mean - se, ymax = mean + se, color = Genotype), linetype = "twodash", color = "darkgrey") + ylim(0,1.2)
+
+
+
+
+start_vals <- list(yf = 0.5, alpha = 0.02)
+yf_initial = 0.5
+alpha_initial = 0.02
+
+joined_Ft1 <- joined[joined$Genotype == 'Ft_+_Horizontal',]
+joined_Ft <- tibble(t = joined_Ft1$t, y=joined_Ft1$y_ave, Genotype = "Ft_+_Horizontal")
+Trial_Ft <- joined_Ft %>% nest(-Genotype) %>%
+  mutate(fit_Ft = map(data, ~nls(y ~ yf * (1- exp(-alpha * t)), start = list(yf = yf_initial, alpha = alpha_initial), data=.)), tidied_Ft = map(fit_Ft, tidy), ) %>% unnest(tidied_Ft) #%>% select(Genotype, term, estimate) %>% spread(term, estimate)
+alpha_Ft <- Trial_Ft[2,5]
+yf_Ft<- Trial_Ft[1,5]
+alpha_Ft
+yf_Ft
+
+joined_Ft_dpy1 <- joined[joined$Genotype == 'Ft_dpy_Horizontal',]
+joined_Ft_dpy <- tibble(t = joined_Ft_dpy1$t, y=joined_Ft_dpy1$y_ave, Genotype = "Ft_dpy_Horizontal")
+Trial_Ft_dpy <- joined_Ft_dpy %>% nest(-Genotype) %>%
+  mutate(fit_Ft_dpy = map(data, ~nls(y ~ yf * (1- exp(-alpha * t)), start = list(yf = yf_initial, alpha = alpha_initial), data=.)), tidied_Ft_dpy = map(fit_Ft_dpy, tidy), ) %>% unnest(tidied_Ft_dpy) #%>% select(Genotype, term, estimate) %>% spread(term, estimate)
+alpha_Ft_dpy <- Trial_Ft_dpy[2,5]
+yf_Ft_dpy<- Trial_Ft_dpy[1,5]
+alpha_Ft_dpy
+yf_Ft_dpy
+
+
+joined_Ft_dachs1 <- joined[joined$Genotype == 'Ft_dachs_Horizontal',]
+joined_Ft_dachs <- tibble(t = joined_Ft_dachs1$t, y=joined_Ft_dachs1$y_ave, Genotype = "Ft_dachs_Horizontal")
+Trial_Ft_dachs <- joined_Ft_dachs %>% nest(-Genotype) %>%
+  mutate(fit_Ft_dachs = map(data, ~nls(y ~ yf * (1- exp(-alpha * t)), start = list(yf = yf_initial, alpha = alpha_initial), data=.)), tidied_Ft_dachs = map(fit_Ft_dachs, tidy), ) %>% unnest(tidied_Ft_dachs) #%>% select(Genotype, term, estimate) %>% spread(term, estimate)
+alpha_Ft_dachs <- Trial_Ft_dachs[2,5]
+yf_Ft_dachs<- Trial_Ft_dachs[1,5]
+alpha_Ft_dachs
+yf_Ft_dachs
+
+data_Ft <- nls(y ~ yf * (1- exp(-alpha * t)), data=joined_Ft, start = start_vals)
+summary(data_Ft)
+data_Ft_dpy <- nls(y ~ yf * (1- exp(-alpha * t)), data=joined_Ft_dpy, start = start_vals)
+summary(data_Ft_dpy)
+data_Ft_dachs <- nls(y ~ yf * (1- exp(-alpha * t)), data=joined_Ft_dachs, start = start_vals)
+summary(data_Ft_dachs)
+
+anova(data_Ft, data_Ft_dpy)
+anova(data_Ft, data_Ft_dachs)
+anova(data_Ft_dpy, data_Ft_dachs)
+
+
+gap::chow.test(y1=joined_Ft$y, x1=joined_Ft$t,y2=joined_Ft_dpy$y,x2=joined_Ft_dpy$t) # Chow Test examines whether parameters of one group of the data are equal to those of other groups. A general rule of thumb that is often used in regression analysis is that if F > 2.5 then we can reject the null hypothesis. Null (H0): yf_H = yf_V, alpha_H = alpha_V.
+gap::chow.test(y1=joined_Ft$y, x1=joined_Ft$t,y2=joined_Ft_dachs$y,x2=joined_Ft_dachs$t) 
+gap::chow.test(y1=joined_Ft_dpy$y, x1=joined_Ft_dpy$t,y2=joined_Ft_dachs$y,x2=joined_Ft_dachs$t) 
+
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+

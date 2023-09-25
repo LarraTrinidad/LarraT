@@ -1,0 +1,173 @@
+---
+title: One-Phase Combined Plots
+output: html_notebook
+---
+
+
+
+This is an R code to average across wings.
+
+```{r}
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(reshape2)
+library(matrixStats)
+library(readr)
+library(tidyverse)
+library(broom)
+library(msm)
+
+#
+
+Genotype <- ""    # Enter genotype name
+
+# 
+
+Genotype
+
+alpha_initial <- 0.02
+yf_initial <- 0.5
+
+Plots <- read_csv("One-phase Average Intensities for Plot.csv")
+Plots
+
+
+Combined_Results <- read_csv("One-phase Combined Results.csv")
+Combined_Results
+
+G <- as.data.frame(ddply(Plots, .(t), summarize, y_ave = mean(y)))
+G
+
+
+augmented_plots <- Plots %>% nest(-Name) %>% mutate(fit = map(data, ~nls(y ~ yf * (1- exp(-alpha * t)), start = list(yf = yf_initial, alpha = alpha_initial), control = list(maxiter = 500, printEval = TRUE, warnOnly = TRUE), data=.)), augmented = map(fit, augment), ) %>% unnest (augmented)
+
+AU <- Plots %>% nest(-Name) %>% mutate(fit = map(data, ~nls(y ~ yf * (1- exp(-alpha * t)), start = list(yf = yf_initial, alpha = alpha_initial), control = list(maxiter = 500, printEval = TRUE, warnOnly = TRUE), data=.)), tidied = map(fit, tidy), ) %>% unnest(tidied) %>% select(Name, term, estimate) %>% spread(term, estimate)
+
+# augmented_plots <- Plots %>% group_by(Name) %>% do(fit = nls(y ~ yf * (1- exp(-alpha * t)), start = list(yf = yf_initial, alpha = alpha_initial), control = list(maxiter = 500, printEval = TRUE, warnOnly = TRUE), data=.)) %>% augment(fit)
+#AU <- Plots %>% group_by(Name) %>% do(fit = nls(y ~ yf * (1- exp(-alpha * t)), start = list(yf = yf_initial, alpha = alpha_initial), control = list(maxiter = 500, printEval = TRUE, warnOnly = TRUE), data=.)) %>% tidy(fit) %>% select(Name, term, estimate) %>% spread(term, estimate)
+
+AU
+qplot(t, y, data = augmented_plots, geom = 'point', color = Name) + geom_line(aes(y=.fitted)) + ylab("Normalised Intensity") + xlab("Time (s)") + labs(title= "One-phase exponential fits of averaged normalised intensities of each wing") + theme_minimal()
+augmented_plots
+summary(augmented_plots)
+
+AU_mutated <- AU %>% mutate("Time Constant" = 1/alpha, "Half-Life" = log(2, exp(1))/alpha)
+AU_mutated
+
+
+my_sum_plot <- Plots %>%
+  group_by(t) %>%
+ dplyr::summarise(n=n(),
+            mean = mean(y),
+            sd = sd(y, na.rm=TRUE)) %>%
+  mutate(se = sd/sqrt(n)) %>%
+  mutate(ic=se*qt((1-0.05)/2 + .5, n-1))
+my_sum_plot
+
+se <- function(t) sd(t)/n(t)
+se
+
+
+augmented_ave_fit <- nls(y_ave ~ ymax * (1- exp(-alpha * t)), data = G, start = list(ymax = yf_initial, alpha = alpha_initial))
+
+joined <- merge(my_sum_plot, augment(augmented_ave_fit))
+joined
+write.table(joined, "Combined_Plot.csv", sep = ",", col.names = !file.exists("Combined_Plot.csv"), row.names = FALSE, append = T)
+qplot(t, y_ave, data=joined) + geom_point(color="mediumseagreen") + geom_line(aes(y=.fitted), color="mediumseagreen", ) + ylab("Average Normalised Intensity") + xlab("Time(s)") + labs(title= "One-phase exponential fit of average normalised intensity") + theme_minimal() +
+  geom_errorbar(aes(x=t, ymin = mean - se, ymax = mean + se), linetype = "twodash", color = "darkgrey") + ylim(0,1.2)
+
+
+summary(augmented_ave_fit)
+AU_fit <- tidy(augmented_ave_fit) %>% select(., term, estimate) %>% spread(term, estimate)
+AU_fit
+
+SUM <- tidy(augmented_ave_fit) %>% select(Estimate = estimate, Standard_Error = std.error, p_value = p.value)
+SUM
+
+ymax_all <- AU_mutated$yf
+ymax_ave <- AU_fit$ymax
+print(paste("Finding the average between wings, the mean y_max is:", ymax_ave))
+
+t_test_yf <- tidy(t.test(ymax_all, mu = ymax_ave))
+t_test_yf
+
+alpha_all <- AU_mutated$alpha
+alpha_ave <- AU_fit$alpha
+print(paste("The mean rate constant, α, is:", alpha_ave, "s^-1."))
+
+t_test_alpha <- tidy(t.test(alpha_all, mu = alpha_ave))
+t_test_alpha
+
+tau_all <- AU_mutated$`Time Constant`
+tau_ave <- 1/alpha_ave
+print(paste("The average time constant, τ, is:", tau_ave, "s."))
+
+t_test_tau <- tidy(t.test(tau_all, mu = tau_ave))
+t_test_tau
+
+half_life_all <- AU_mutated$`Half-Life`
+half_life_ave <- log(2, base=exp(1))/alpha_ave
+print(paste("The average half-life is:", half_life_ave, "s."))
+
+t_test_half_life <- tidy(t.test(half_life_all, mu = half_life_ave))
+t_test_half_life
+
+
+comb_res <- read_csv("One-phase Combined Results.csv")
+Stable_Am <- comb_res %>% select(Name, Stable_Amount, Unstable_Amount)
+Stable_Am
+ group_by(Stable_Am, Name) %>%
+  summarise(
+    mean = mean(Stable_Amount, na.rm = TRUE)
+  )
+res.aov <- aov(Stable_Amount ~ Name, data = Stable_Am)
+summary(res.aov)
+TukeyHSD(res.aov)
+
+Summary_of_values <- data.frame(c("Genotype", "Rate Constant", "Percentage of instability", "Time Constant", "Half-Life"),
+                                c(Genotype,
+                         print(paste(format(alpha_ave, digits = 3), "s^-1")),
+                         print(paste(format(100*ymax_ave, digits = 3), "%")),
+                         print(paste(format(tau_ave, digits = 3), "s")),
+                         print(paste(format(half_life_ave, digits = 3), "s"))),
+                         c("95% confidence intervals",
+                           print(paste("[", format(t_test_alpha$conf.low, digits = 3), ",", format(t_test_alpha$conf.high, digits=3), "]")),
+                           print(paste("[", format(t_test_yf$conf.low*100, digits = 3), ",", format(t_test_yf$conf.high*100, digits=3),"]")),
+                           print(paste("[", format(t_test_tau$conf.low, digits = 3), ",", format(t_test_tau$conf.high, digits=3),"]")),
+                           print(paste("[", format(t_test_half_life$conf.low, digits = 3), ",", format(t_test_half_life$conf.high, digits=3), "]"))))
+print(Summary_of_values)
+
+Stable <- Stable_Am %>% select(Name, "Amount" = Stable_Amount) %>% mutate(Type = "Stable")
+Unstable <- Stable_Am %>% select(Name, "Amount" = Unstable_Amount) %>% mutate(Type = "Unstable")
+Name <- Stable_Am$Name
+
+
+
+Chart <- rbind(Stable, Unstable)
+Chart
+
+
+ggplot(Chart, aes(x=Name, y=Amount, fill = Type)) + geom_bar(position = "stack", stat = "identity")  + xlab("Name") + ylab("Amount") + theme_minimal() + ggtitle(paste("Stable and unstable amounts", "\n", Genotype))
+
+my_sum_stable <- Chart %>%
+  group_by(Type) %>%
+  dplyr::summarise(n=n(),
+            mean = mean(Amount),
+            sd = sd(Amount, na.rm=TRUE)) %>%
+  mutate(se = sd/sqrt(n)) %>%
+  mutate(ic=se*qt((1-0.05)/2 + .5, n-1))
+my_sum_stable
+N <- my_sum_stable$n[1]
+
+
+ggplot(my_sum_stable, aes(x=Type, y=mean, fill = Type)) + geom_bar(position = "stack", stat = "identity")  + xlab("Name") + ylab("Amount") + theme_minimal() + geom_errorbar(aes(x=Type, ymin = mean - se, ymax = mean+se), width = 0.4) + ggtitle(paste("Average stable and unstable amounts", "\n", Genotype, "\n", "n =", N, "wings"))
+
+
+
+
+
+
+
+```
+

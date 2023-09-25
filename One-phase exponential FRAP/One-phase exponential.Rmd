@@ -1,0 +1,385 @@
+---
+title: "One-phase "
+output: html_notebook
+---
+
+
+
+
+```{r}
+library(ggplot2)
+library(matrixStats)
+library(readr)
+library(tidyverse)
+library(broom)
+library(msm)
+library(plyr)
+library(dplyr)
+
+# Please only input relevant information in between these lines.
+
+name <- ""                            # input file name here
+test <- read.csv(".csv")              # input csv filename here
+
+#Please only input relevant information in between these lines.
+
+
+wing_z_location <- test$wing_z_location[1]
+wing_membrane_z_location <- test$wing_membrane_z_location[1]
+background_intensity_value <- test$background_intensity_value[1]
+
+yf_initial <- 0.5
+alpha_initial <- 0.02
+
+
+Wing_Membrane_Distance <- wing_z_location - wing_membrane_z_location
+tryCatch(print(paste("The wing membrane distance is ", Wing_Membrane_Distance,"µm.")), error = function(e) {print("You have not input the wing z-locations.")})
+
+
+start_unbleached_1 <- test$mean_unbleached_1[1]
+start_unbleached_2 <- test$mean_unbleached_2[1]
+start_unbleached_3 <- test$mean_unbleached_3[1]
+start_unbleached_4 <- test$mean_unbleached_4[1]
+start_unbleached <- c(start_unbleached_1, start_unbleached_2, start_unbleached_3, start_unbleached_4)
+mean_start_unbleached <- mean(start_unbleached)
+#tryCatch(print(paste("The mean raw intensity of the unbleached regions at the start is", mean_start_unbleached, "µm.")), error = function(e) {print("You have not input the intensity values for the unbleached regions.")})
+
+end_unbleached_1 <- test$mean_unbleached_1[36]
+end_unbleached_2 <- test$mean_unbleached_2[36]
+end_unbleached_3 <- test$mean_unbleached_3[36]
+end_unbleached_4 <- test$mean_unbleached_4[36]
+end_unbleached <- c(end_unbleached_1, end_unbleached_2, end_unbleached_3, end_unbleached_4)
+mean_end_unbleached <- mean(end_unbleached)
+#tryCatch(print(paste("The mean raw intensity of the unbleached regions at the end is", mean_end_unbleached,"µm.")), error = function(e) {print("You have not input the intensity values for the unbleached regions.")})
+
+acquisition_bleaching <- (100 * ((mean_start_unbleached)-(mean_end_unbleached)) / (mean_start_unbleached - background_intensity_value))
+if (acquisition_bleaching <= 25) {
+print(paste("The acquisition bleaching is ", acquisition_bleaching," %, which is below 25%. This is OK.", sep = ''))}
+if (acquisition_bleaching > 25) {
+  print(paste("The acquisition bleaching is ", acquisition_bleaching, " %. Acquisition bleaching should be less than 25%.", sep = ''))}
+
+#
+unbleached_first_three_1 <- test$mean_unbleached_1[1:3]
+unbleached_first_three_2 <- test$mean_unbleached_2[1:3]
+unbleached_first_three_3 <- test$mean_unbleached_3[1:3]
+unbleached_first_three_4 <- test$mean_unbleached_4[1:3]
+unbleached_first_three <- c(unbleached_first_three_1, unbleached_first_three_2, unbleached_first_three_3, unbleached_first_three_4)
+#
+selected_columns <- test %>% select(time_s, mean_bleached_1, mean_bleached_2, mean_bleached_3, mean_bleached_4, mean_bleached_5, mean_bleached_6, mean_bleached_7, mean_bleached_8, mean_unbleached_1, mean_unbleached_2, mean_unbleached_3, mean_unbleached_4)
+
+start_bleached_1 <- test$mean_bleached_1[1:3]
+start_bleached_2 <- test$mean_bleached_2[1:3]
+start_bleached_3 <- test$mean_bleached_3[1:3]
+start_bleached_4 <- test$mean_bleached_4[1:3]
+start_bleached_5 <- test$mean_bleached_5[1:3]
+start_bleached_6 <- test$mean_bleached_6[1:3]
+start_bleached_7 <- test$mean_bleached_7[1:3]
+start_bleached_8 <- test$mean_bleached_8[1:3]
+start_bleached <- c(start_bleached_1, start_bleached_2, start_bleached_3, start_bleached_4, start_bleached_5, start_bleached_6, start_bleached_7, start_bleached_8)
+mean_start_bleached <- mean(start_bleached, na.rm = TRUE)
+#print(paste("The mean raw intensity of the first three pre-bleach regions is ", mean_start_bleached, ".", sep = ''))
+
+post_bleach_1 <- test$mean_bleached_1[4]
+post_bleach_2 <- test$mean_bleached_2[4]
+post_bleach_3 <- test$mean_bleached_3[4]
+post_bleach_4 <- test$mean_bleached_4[4]
+post_bleach_5 <- test$mean_bleached_5[4]
+post_bleach_6 <- test$mean_bleached_6[4]
+post_bleach_7 <- test$mean_bleached_7[4]
+post_bleach_8 <- test$mean_bleached_8[4]
+post_bleach <- c(post_bleach_1, post_bleach_2, post_bleach_3, post_bleach_4, post_bleach_5, post_bleach_6, post_bleach_7, post_bleach_8)
+mean_post_bleach <- mean(post_bleach, na.rm = TRUE)
+#print(paste("The mean raw intensity at t=0 (post-bleach) is ",mean_post_bleach, ".", sep = ''))
+initial_bleaching <- 100 - 100*(mean_post_bleach)/(mean_start_bleached)
+
+if(initial_bleaching > 50 && initial_bleaching < 75) {print(paste("The amount of initial bleaching is ", initial_bleaching, " %, which is between 50-75%. This is OK.", sep = ''))}
+if(initial_bleaching < 50 || initial_bleaching > 75)
+ {print(paste("The amount of initial bleaching is ", initial_bleaching, " %. Initial bleaching should be between 50-75%.", sep = ''))}
+
+
+selected_columns
+
+non_bleached_control_regions <- test %>% select(mean_unbleached_1, mean_unbleached_2, mean_unbleached_3, mean_unbleached_4)
+non_bleached_control <- mean(unbleached_first_three)
+#{print(paste("The average intensity of the unbleached regions from the three pre-bleach timepoints is ", non_bleached_control, ".", sep = ''))}
+
+bleached_regions <- test %>% select(mean_bleached_1, mean_bleached_2, mean_bleached_3, mean_bleached_4, mean_bleached_5, mean_bleached_6, mean_bleached_7, mean_bleached_8)
+
+data_x <- selected_columns %>% mutate(means_unbleached = rowMeans(non_bleached_control_regions, na.rm=TRUE), means_bleached = rowMeans(bleached_regions, na.rm = TRUE))
+
+
+normalised_for_acquisition_bleaching <- data_x %>% mutate(normalised_acquisition_1 = ((non_bleached_control - background_intensity_value))/(means_unbleached - background_intensity_value) * ( mean_bleached_1 - background_intensity_value)/(mean(start_bleached_1) - background_intensity_value),
+                                                      normalised_acquisition_2 = ((non_bleached_control - background_intensity_value))/(means_unbleached - background_intensity_value) * ( mean_bleached_2 - background_intensity_value)/(mean(start_bleached_2) - background_intensity_value),
+                                                      normalised_acquisition_3 = ((non_bleached_control - background_intensity_value))/(means_unbleached - background_intensity_value) * ( mean_bleached_3 - background_intensity_value)/(mean(start_bleached_3) - background_intensity_value),
+                                                      normalised_acquisition_4 = ((non_bleached_control - background_intensity_value))/(means_unbleached - background_intensity_value) * ( mean_bleached_4 - background_intensity_value)/(mean(start_bleached_4) - background_intensity_value),
+                                                      normalised_acquisition_5 = ((non_bleached_control - background_intensity_value))/(means_unbleached - background_intensity_value) * ( mean_bleached_5 - background_intensity_value)/(mean(start_bleached_5) - background_intensity_value),
+                                                      normalised_acquisition_6 = ((non_bleached_control - background_intensity_value))/(means_unbleached - background_intensity_value) * ( mean_bleached_6 - background_intensity_value)/(mean(start_bleached_6) - background_intensity_value),
+                                                      normalised_acquisition_7 = ((non_bleached_control - background_intensity_value))/(means_unbleached - background_intensity_value) * ( mean_bleached_7 - background_intensity_value)/(mean(start_bleached_7) - background_intensity_value),
+                                                      normalised_acquisition_8= ((non_bleached_control - background_intensity_value))/(means_unbleached - background_intensity_value) * ( mean_bleached_8 - background_intensity_value)/(mean(start_bleached_8) - background_intensity_value))
+#normalised_for_acquisition_bleaching
+
+normalised_for_acquisition_bleaching_only <- normalised_for_acquisition_bleaching %>% select(time_s, normalised_acquisition_1, normalised_acquisition_2, normalised_acquisition_3, normalised_acquisition_4, normalised_acquisition_5, normalised_acquisition_6, normalised_acquisition_7, normalised_acquisition_8)
+normalised_for_acquisition_bleaching_only
+
+
+normalised_t_0_region_1 <- normalised_for_acquisition_bleaching$normalised_acquisition_1[4]
+normalised_t_0_region_2 <- normalised_for_acquisition_bleaching$normalised_acquisition_2[4]
+normalised_t_0_region_3 <- normalised_for_acquisition_bleaching$normalised_acquisition_3[4]
+normalised_t_0_region_4 <- normalised_for_acquisition_bleaching$normalised_acquisition_4[4]
+normalised_t_0_region_5 <- normalised_for_acquisition_bleaching$normalised_acquisition_5[4]
+normalised_t_0_region_6 <- normalised_for_acquisition_bleaching$normalised_acquisition_6[4]
+normalised_t_0_region_7 <- normalised_for_acquisition_bleaching$normalised_acquisition_7[4]
+normalised_t_0_region_8 <- normalised_for_acquisition_bleaching$normalised_acquisition_8[4]
+
+normalised_between_0_and_1 <- normalised_for_acquisition_bleaching %>%
+  mutate(Normalised_Region_1 = (normalised_acquisition_1 - normalised_t_0_region_1)/(1-normalised_t_0_region_1),
+         Normalised_Region_2 = (normalised_acquisition_2 - normalised_t_0_region_2)/(1-normalised_t_0_region_2),
+         Normalised_Region_3 = (normalised_acquisition_3 - normalised_t_0_region_3)/(1-normalised_t_0_region_3),
+         Normalised_Region_4 = (normalised_acquisition_4 - normalised_t_0_region_4)/(1-normalised_t_0_region_4),
+         Normalised_Region_5 = (normalised_acquisition_5 - normalised_t_0_region_5)/(1-normalised_t_0_region_5),
+         Normalised_Region_6 = (normalised_acquisition_6 - normalised_t_0_region_6)/(1-normalised_t_0_region_6),
+         Normalised_Region_7 = (normalised_acquisition_7 - normalised_t_0_region_7)/(1-normalised_t_0_region_7),
+         Normalised_Region_8 = (normalised_acquisition_8 - normalised_t_0_region_8)/(1-normalised_t_0_region_8))
+#normalised_between_0_and_1
+
+normalised_between_0_and_1_only <- normalised_between_0_and_1 %>% select(time_s, Normalised_Region_1, Normalised_Region_2, Normalised_Region_3, Normalised_Region_4, Normalised_Region_5, Normalised_Region_6, Normalised_Region_7, Normalised_Region_8)
+#normalised_between_0_and_1_only
+
+normalisation <- normalised_between_0_and_1 %>% select(Normalised_Region_1, Normalised_Region_2, Normalised_Region_3, Normalised_Region_4, Normalised_Region_5, Normalised_Region_6, Normalised_Region_7, Normalised_Region_8)
+normalised_average_sd <- normalisation %>%
+  mutate(Normalised_Average = rowMeans(normalisation, na.rm=TRUE), Standard_Deviation = rowSds(as.matrix(normalisation[,c(1,2,3,4,5,6,7,8)]), na.rm=TRUE))
+normalised_means_sd <- normalised_average_sd %>% select(Normalised_Average, Standard_Deviation)
+#normalised_average
+
+
+time <- test$time_s
+mb1 <- test$mean_bleached_1
+mb2 <- test$mean_bleached_2
+mb3 <- test$mean_bleached_3
+mb4 <- test$mean_bleached_4
+mb5 <- test$mean_bleached_5
+mb6 <- test$mean_bleached_6
+mb7 <- test$mean_bleached_7
+mb8 <- test$mean_bleached_8
+
+raw_bleached <- data.frame(t=time, y=mb1, Region = "1") %>% rbind(., data.frame(t=time, y=mb2, Region = "2")) %>% rbind(., data.frame(t=time, y=mb3, Region = "3")) %>% rbind(., data.frame(t=time, y=mb4, Region = "4")) %>% rbind(., data.frame(t=time, y=mb5, Region = "5")) %>% rbind(., data.frame(t=time, y=mb6, Region = "6")) %>% rbind(., data.frame(t=time, y=mb7, Region = "7") )%>% rbind(., data.frame(t=time, y=mb8, Region = "8"))
+raw_bleached_na <- na.omit(raw_bleached)
+#raw_bleached
+
+ggplot(na.omit(raw_bleached), aes(x=t, y=y)) + geom_line(aes(col=Region))  +
+  ylab("Raw Intensity") +
+  xlab("Time (s)") + 
+  labs(title= "Raw Intensities of Bleached Regions") + theme_minimal()
+
+mu1 <- test$mean_unbleached_1
+mu2 <- test$mean_unbleached_2
+mu3 <- test$mean_unbleached_3
+mu4 <- test$mean_unbleached_4
+
+raw_bleached_unbleached <- data.frame(t=time, y=mb1, Region = "1", Type = "Bleached") %>% rbind(., data.frame(t=time, y=mb2, Region = "2", Type = "Bleached")) %>% rbind(., data.frame(t=time, y=mb3, Region = "3", Type = "Bleached")) %>% rbind(., data.frame(t=time, y=mb4, Region = "4", Type = "Bleached")) %>% rbind(., data.frame(t=time, y=mb5, Region = "5", Type = "Bleached")) %>% rbind(., data.frame(t=time, y=mb6, Region = "6", Type = "Bleached")) %>% rbind(., data.frame(t=time, y=mb7, Region = "7", Type = "Bleached"))  %>% rbind(., data.frame(t=time, y=mb8, Region = "8", Type = "Bleached")) %>% rbind(., data.frame(t=time, y=mu1, Region = "A", Type = "Unbleached")) %>% rbind(., data.frame(t=time, y=mu2, Region = "B", Type = "Unbleached")) %>% rbind(., data.frame(t=time, y=mu3, Region = "C", Type = "Unbleached")) %>% rbind(., data.frame(t=time, y=mu4, Region = "D", Type = "Unbleached"))
+raw_bleached_unbleached_na <- na.omit(raw_bleached_unbleached)
+#raw_bleached_unbleached
+
+ggplot(na.omit(raw_bleached_unbleached), aes(x=t, y=y, shape = Type, color = Region, linetype=Type)) + geom_line(aes(col=Region))  +
+  ylab("Raw Intensity") +
+  xlab("Time (s)") + 
+  labs(title= "Raw Intensities of Bleached and Unbleached Regions") + theme_minimal()
+
+
+summary_normalised <- cbind(normalised_between_0_and_1 %>% select(time_s, normalised_acquisition_1, normalised_acquisition_2, normalised_acquisition_3, normalised_acquisition_4, normalised_acquisition_5, normalised_acquisition_6, normalised_acquisition_7, normalised_acquisition_8, Normalised_Region_1, Normalised_Region_2, Normalised_Region_3, Normalised_Region_4, Normalised_Region_5, Normalised_Region_6, Normalised_Region_7, Normalised_Region_8), normalised_means_sd)
+
+time_s <- summary_normalised$time_s
+nr1 <- summary_normalised$Normalised_Region_1
+nr2 <- summary_normalised$Normalised_Region_2
+nr3 <- summary_normalised$Normalised_Region_3
+nr4 <- summary_normalised$Normalised_Region_4
+nr5 <- summary_normalised$Normalised_Region_5
+nr6 <- summary_normalised$Normalised_Region_6
+nr7 <- summary_normalised$Normalised_Region_7
+nr8 <- summary_normalised$Normalised_Region_8
+ave <- summary_normalised$Normalised_Average
+
+normalised_plot <- data.frame(t=time_s, y=nr1, Region = "1") %>% rbind(., data.frame(t=time_s, y=nr2, Region = "2")) %>% rbind(., data.frame(t=time_s, y=nr3, Region = "3")) %>% rbind(., data.frame(t=time_s, y=nr4, Region = "4")) %>% rbind(., data.frame(t=time_s, y=nr5, Region = "5")) %>% rbind(., data.frame(t=time_s, y=nr6, Region = "6")) %>% rbind(., data.frame(t=time_s, y=nr7, Region = "7")) %>% rbind(., data.frame(t=time_s, y=nr8, Region = "8")) %>% rbind(., data.frame(t=time_s, y=ave, Region = "Average"))
+normalised_plot <- na.omit(normalised_plot)
+#normalised_plot
+
+ggplot(na.omit(normalised_plot), aes(x=t, y=y, color = Region)) + geom_line() +
+  ylab("Normalised Intensity") +
+  xlab("Time (s)") + 
+  labs(title= "Normalised Intensities of Bleached Regions") + theme_minimal()
+
+
+
+data_plot <- summary_normalised %>% select(time_s, Normalised_Region_1, Normalised_Region_2, Normalised_Region_3, Normalised_Region_4, Normalised_Region_5, Normalised_Region_6, Normalised_Region_7, Normalised_Region_8, Normalised_Average) %>% slice(4:36)
+data_plot
+
+    # original formula = y ~ y0 + (y_max - y0)*(1-exp(-k * time_s))
+    # normalised formula = y ~ yf * (1- exp(-alpha * t)
+    #nls <- nls(y ~ yf * (1- exp(-alpha * t)), data = df, start = list(yf = yf_initial, alpha = alpha_initial))
+
+t <- data_plot$time_s
+y1 <- data_plot$Normalised_Region_1
+y2 <- data_plot$Normalised_Region_2
+y3 <- data_plot$Normalised_Region_3
+y4 <- data_plot$Normalised_Region_4
+y5 <- data_plot$Normalised_Region_5
+y6 <- data_plot$Normalised_Region_6
+y7 <- data_plot$Normalised_Region_7
+y8 <- data_plot$Normalised_Region_8
+ave <- data_plot$Normalised_Average
+
+df <- tibble(t=t, y=y1, Region = '1') %>%
+  rbind(., data.frame(t=t, y=y2, Region = '2')) %>%
+rbind(., data.frame(t=t, y=y3, Region = '3')) %>%
+rbind(., data.frame(t=t, y=y4, Region = '4')) %>%
+  rbind(., data.frame(t=t, y=y5, Region = '5')) %>%
+   rbind(., data.frame(t=t, y=y6, Region = '6')) %>%
+   rbind(., data.frame(t=t, y=y7, Region = '7')) %>%  rbind(., data.frame(t=t, y=y8, Region = '8')) %>% mutate(y = replace(y, y == "NA", NA)) %>% drop_na()
+
+df
+
+qplot(t, y, data = df, colour = Region)
+
+
+augmented <- df %>% nest(-Region) %>% mutate(fit = map(data, ~nls(y ~ yf * (1- exp(-alpha * t)), start = list(yf = yf_initial, alpha = alpha_initial), control = list(maxiter = 500, printEval = TRUE, warnOnly = TRUE), data=.)), augmented = map(fit, augment), ) %>% unnest (augmented)
+
+
+qplot(t, y, data = augmented, geom = 'point', colour = Region) + geom_line(aes(y=.fitted)) + ylab("Normalised Intensity") + xlab("Time (s)") + labs(title= "One-phase exponential fit") + theme_minimal()
+
+#qplot(t, .resid, data = augmented, colour = Region)
+
+#qplot(.fitted, .resid, data = augmented, colour = Region)
+
+A <- df %>% nest(-Region) %>% mutate(fit = map(data, ~nls(y ~ yf * (1- exp(-alpha * t)), start = list(yf = yf_initial, alpha = alpha_initial), control = list(maxiter = 500, printEval = TRUE, warnOnly = TRUE), data=.)), tidied = map(fit, tidy), ) %>% unnest(tidied) %>% select(Region, term, estimate) %>% spread(term, estimate)
+
+
+
+#coef(fit)
+
+#tidy(fit)
+
+#augment(fit)
+
+#qplot(t, y, data = augment(fit)) + geom_line(aes(y = .fitted))
+#qplot(t, .resid, data = augment(fit))
+
+#glance(fit)
+
+
+
+Average <- tibble(t=t, y=ave, Region = 'Average')
+Average
+
+
+summary(A)
+
+
+
+
+B <- Average %>% nest(-Region) %>%
+  mutate(fit_B = map(data, ~nls(y ~ yf * (1- exp(-alpha * t)), start = list(yf = yf_initial, alpha = alpha_initial), data=.)), tidied_B = map(fit_B, tidy), ) %>% unnest(tidied_B) %>% select(Region, term, estimate) %>% spread(term, estimate)
+B
+
+B_mutated <- B %>% mutate("Time Constant" = 1/alpha, "Half-Life" = log(2, exp(1))/alpha)
+B_mutated
+
+B_mu_alpha = as.numeric(B[1,2])
+B_mu_yf = as.numeric(B[1,3])
+
+C <- A %>% mutate("Time Constant" = 1/alpha, "Half-Life" = log(2, exp(1))/alpha)
+C
+
+results_yf <- t.test(C$yf, mu = B_mu_yf)
+results_yf
+results_alpha <- t.test(C$alpha, mu = B_mu_alpha)
+results_alpha
+results_tau <- t.test(C$"Time Constant", mu = 1/B_mu_alpha)
+results_tau
+results_t_0.5 <- t.test(C$"Half-Life", mu = log(2, exp(1))/B_mu_alpha)
+results_t_0.5
+
+yf <- B[1,3]
+alpha <- B[1,2]
+
+
+
+fit_ave <- nls(y ~ yf * (1- exp(-alpha * t)), data = Average, start = list(yf = yf_initial, alpha = alpha_initial))
+fit_ave
+qplot(t, y, data=augment(fit_ave)) + geom_point(color="mediumseagreen") + geom_line(aes(y=.fitted), color="mediumseagreen") + ylab("Average Normalised Intensity") + xlab("Time(s)") + labs(title= "One-phase exponential fit of average normalised intensity") + theme_minimal()
+summary(fit_ave)
+
+
+print(paste("The y_max of the graph: ", yf, "or", yf*100, "% instability"))
+print(paste("The rate constant, α: ", alpha))
+
+tau <- 1/alpha
+print(paste("The time constant, τ: ", tau))
+
+t_0.5 <- log(2, exp(1)) / alpha
+print(paste("The half-life, t_0.5: ", t_0.5))
+
+pre_bleach_intensities <- c(unbleached_first_three_1, unbleached_first_three_2, unbleached_first_three_3, unbleached_first_three_4, start_bleached_1, start_bleached_2, start_bleached_3, start_bleached_4, start_bleached_5, start_bleached_6, start_bleached_7, start_bleached_8)
+pre_bleach_intensities_na_omit <- pre_bleach_intensities[!is.na(pre_bleach_intensities)]
+
+pre_bleach_intensities_no_background <- pre_bleach_intensities_na_omit - background_intensity_value
+#pre_bleach_intensities_no_background
+
+mean_pre_bleach_intensities_no_background <- mean(pre_bleach_intensities_no_background)
+print(paste("Mean intensity of ROIs:", mean_pre_bleach_intensities_no_background))
+
+y0 <- mean_pre_bleach_intensities_no_background * exp(0.01864 * Wing_Membrane_Distance)
+print(paste("The initial intensity, y0: ", y0))
+
+stable_amount <- as.numeric((1-yf)*y0)
+#print(paste("The stable amount is:", stable_amount))
+
+unstable_amount <- as.numeric(yf*y0)
+#print(paste("The unstable amount is:", unstable_amount))
+
+values <- data.frame("Wing Membrane Distance" = Wing_Membrane_Distance, "Background Intensity Value" = background_intensity_value, "ymax" = as.numeric(yf), "Rate Constant" = as.numeric(alpha), "Time Constant" = as.numeric(tau), "Half-Life" = as.numeric(t_0.5), "Mean Intensity" = mean_pre_bleach_intensities_no_background, "y0, corrected mean intensity" = as.numeric(y0))
+values
+
+stable <- data.frame("Type" = c("Stable", "Unstable"), "Amount" = c(stable_amount,unstable_amount))
+print(stable)
+
+ggplot(data = stable, aes(x=Type, y=Amount, fill = Type)) + geom_bar(stat = "identity")  + xlab(name) + theme_minimal()
+
+
+
+sink(paste("One-phase", basename(name), "Results.csv", sep = " "))
+cat('')
+write.csv(summary_normalised, row.names = FALSE)
+cat('')
+cat('')
+write.csv(values, row.names = FALSE)
+cat('')
+write.csv(stable, row.names = FALSE)
+cat('')
+sink()
+
+combined <- tibble("Name" = name, "Wing_Membrane_Distance" = Wing_Membrane_Distance, "Puncta_Mean_Intensity" = as.numeric(mean_pre_bleach_intensities_no_background), "ymax" = as.numeric(yf), "y0" = as.numeric(y0), "Percent_ymax_unstable" = as.numeric(yf*100), "Unstable_Amount" = unstable_amount, "Stable_Amount" = stable_amount, "Rate Constant" = as.numeric(alpha), "Time Constant" = as.numeric(tau), "Half-Life" = as.numeric(t_0.5))
+combined
+
+write.table(combined, "One-phase Combined Results.csv", sep = ",", col.names = !file.exists("One-phase Combined Results.csv"), row.names = FALSE, append = T)
+
+Z <- read_csv("One-phase Combined Results.csv")
+Z
+
+Table_Summary <- distinct(Z, Name, .keep_all = TRUE)
+Table_Summary
+write.table(Table_Summary, "One-phase Combined Results.csv", sep = ",", col.names = TRUE, row.names = FALSE, append = F)
+
+
+name_df <- tibble("Name" = name)
+average_intensities <- Average %>% select(t, y)
+average_intensities_for_plot <- cbind(name_df, average_intensities)
+write.table(average_intensities_for_plot, "One-phase Average Intensities for Plot.csv", sep = ",", col.names = !file.exists("One-phase Average Intensities for Plot.csv"), row.names = FALSE, append = T)
+U <- read_csv("One-phase Average Intensities for Plot.csv")
+Average_Summary <- distinct(U, .keep_all=TRUE)
+write.table(Average_Summary, "One-phase Average Intensities for Plot.csv", sep = ",", col.names = TRUE, row.names = FALSE, append = F)
+```
+
+
+A CSV file (filename "Results") will be produced and saved containing all the relevant information within the same folder.
+
+Another CSV file ("Combined Results") will be produced and saved within the same folder, which will contain all the information necessary to compare results between wings.
