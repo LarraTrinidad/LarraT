@@ -1,0 +1,110 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+
+library("ggpubr")
+library(ggplot2)
+library(circular)
+library(tidyverse)
+library("scales")
+
+#if(!require(devtools)) install.packages("devtools")
+#devtools::install_github("kassambara/ggpubr")
+
+
+data <- read.csv("Average_SD.csv", stringsAsFactors=F, na.strings="unknown")
+data
+
+
+
+# Mean cell division orientation
+
+r <- ggplot(data = data, aes(x = Genotype, y = Mean, fill = Genotype)) + geom_boxplot() + 
+  ylab("Mean cell division orientation") + theme(text = element_text(size=15), element_line(size = 0.01)) + theme(axis.text.x = element_text(angle = 55, vjust = 1, hjust = 1)) 
+
+x <- which(names(data) == "Genotype")
+y <- which(names(data) == "Mean")
+method1 <- "anova" 
+method2 <- "t.test" 
+my_comparisons_1 <- list(c("wild_type", "fat_mutant"),
+    c("wild_type", "dachsous_mutant"),
+    c("wild_type", "dachs_mutant"),
+    c("wild_type", "dumpy_mutant"))
+r + ggsignif::geom_signif(comparisons = my_comparisons_1, method = method2, label = "p.format", na.rm = TRUE, map_signif_level = FALSE, y_position = c(20,21, 22,23)) 
+ggsave("Mean cell division orientation.png", width = 10, height = 8, unit = "in")   
+
+# SD cell division orientation
+
+r1 <- ggplot(data = data, aes(x = Genotype, y = SD, fill = Genotype)) + geom_boxplot() + 
+  ylab("Standard Deviation of cell division orientation") + theme(text = element_text(size=15), element_line(size = 0.01)) + theme(axis.text.x = element_text(angle = 55, vjust = 1, hjust = 1)) 
+
+x1 <- which(names(data) == "Genotype")
+y1 <- which(names(data) == "SD")
+method1a <- "anova" 
+method2a <- "var.test" 
+my_comparisons_1a <- list(c("wild_type", "fat_mutant"),
+    c("wild_type", "dachsous_mutant"),
+    c("wild_type", "dachs_mutant"),
+    c("wild_type", "dumpy_mutant"))
+r1 + ggsignif::geom_signif(comparisons = my_comparisons_1a, method = method2a, label = "p.format", na.rm = TRUE, map_signif_level = FALSE, y_position = c(50,51, 52,53)) 
+ggsave("Standard Deviation of cell division orientation.png", width = 10, height = 8, unit = "in")   
+
+
+
+
+
+#K-S
+
+d <- read.csv("KS_Test.csv", na.strings="unknown")
+d
+
+wild_type <- d[d$Genotype == "wild_type",]
+ft_mutant <- d[d$Genotype == "ft_mutant",]
+ds_mutant <- d[d$Genotype == "ds_mutant",]
+dachs_mutant <- d[d$Genotype == "dachs_mutant",]
+dumpy_mutant <- d[d$Genotype == "dumpy_mutant",]
+ft_dachs_mutant <- d[d$Genotype == "ft_dachs_mutant",]
+ds_dachs_mutant <- d[d$Genotype == "ds_dachs_mutant",]
+Fh <-d[d$Genotype == "Fh",]
+F <-d[d$Genotype == "F",]
+Dh <-d[d$Genotype == "Dh",]
+D <-d[d$Genotype == "D",]
+#ds_TEV_control <- d[d$Genotype == "ds_TEV_control",]
+#ds_TEV_HS <- d[d$Genotype == "ds_TEV_HS",]
+
+ks.test(wild_type$FLIPPED_Normalised, ft_mutant$FLIPPED_Normalised)
+ks.test(wild_type$FLIPPED_Normalised, ds_mutant$FLIPPED_Normalised)
+ks.test(wild_type$FLIPPED_Normalised, dachs_mutant$FLIPPED_Normalised)
+ks.test(wild_type$FLIPPED_Normalised, dumpy_mutant$FLIPPED_Normalised)
+ks.test(wild_type$FLIPPED_Normalised, ft_dachs_mutant$FLIPPED_Normalised)
+ks.test(wild_type$FLIPPED_Normalised, ds_dachs_mutant$FLIPPED_Normalised)
+ks.test(F$FLIPPED_Normalised, Fh$FLIPPED_Normalised)
+ks.test(wild_type$FLIPPED_Normalised, F$FLIPPED_Normalised)
+ks.test(wild_type$FLIPPED_Normalised, Fh$FLIPPED_Normalised)
+ks.test(D$FLIPPED_Normalised, Dh$FLIPPED_Normalised)
+ks.test(wild_type$FLIPPED_Normalised, D$FLIPPED_Normalised)
+ks.test(wild_type$FLIPPED_Normalised, Dh$FLIPPED_Normalised)
+#ks.test(ds_TEV_control$Corrected_Angle, ds_TEV_HS$Corrected_Angle)
+#ks.test(wild_type$Corrected_Angle, ds_TEV_HS$Corrected_Angle)
+
+# Mann-Whitney test
+
+angle_of_division <- c(wild_type, ft_mutant)
+genotype <- rep(c("wild_type", "ft_mutant"))
+dataset <- data.frame(angle_of_division, genotype, stringsAsFactors = TRUE)
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+ShiDs+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
