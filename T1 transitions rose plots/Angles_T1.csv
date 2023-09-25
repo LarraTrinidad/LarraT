@@ -1,0 +1,1 @@
+1,Area,Mean,Min,Max,Angle,Length,,SOP,Angle-SOP,"IF(J2>=0,J2,J2+180)",Corrected_Angle
