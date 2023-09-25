@@ -1,0 +1,204 @@
+--
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+
+
+
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(reshape2)
+library(matrixStats)
+library(readr)
+library(tidyverse)
+library(broom)
+library(msm)
+
+
+
+
+data <- read.csv("Averaged.csv")
+data
+data_ <- data.frame(data[-c(1,2,3,4),])
+
+
+#t <- data$X
+#x <- data$Major
+#y <- data$Minor
+#circ <- data$Circ.
+#ar <- data$AR
+
+#X <- plot(t,x)
+#Y <- plot(t,y)
+#plot(t, x/y)
+#plot(t,ar)
+
+
+#df <- data.frame(t,x,y) #create data frame from the above vectors
+#df.m <- melt(df, id.vars="t") # melt the dataframe using topics as id
+# plot the lines using ggplot and geom_line
+ggplot(data = data,
+       aes(x = data$t, y = data$Major, group = Name, color = Name)) + geom_line(size = 1) + ylab("Major Length [px]") + xlab("Time [s]") +geom_smooth(se = FALSE,
+              method = "loess",
+              formula = y ~ x)
+
+ggplot(data = data,
+       aes(x = data$t, y = data$Minor, group = Name, color = Name)) + geom_line(size = 1) + ylab("Minor Length [px]") + xlab("Time [s]") +geom_smooth(se = FALSE,
+              method = "loess",
+              formula = y ~ x)
+
+
+# For normalised Major (Major_)
+my_sum_plot <- data %>%
+  group_by(t) %>%
+ dplyr::summarise(n=n(),
+            mean = mean(Major_),
+            sd = sd(Major_, na.rm=TRUE)) %>%
+  mutate(se = sd/sqrt(n)) %>%
+  mutate(ic=se*qt((1-0.05)/2 + .5, n-1))
+my_sum_plot
+
+my_sum_plot_ <- data.frame(my_sum_plot[-c(1,2,3,4),])
+
+ggplot(data = my_sum_plot_,
+       aes(x = t, y = mean, group = t)) + geom_line(size = 1) + ylab("Length [px]") + xlab("Time [s]") + geom_point() + geom_smooth(se =TRUE, method = "loess", formula = y ~ x)
+
+time <- my_sum_plot_$t
+major <- my_sum_plot_$mean
+
+yf_initial = 50
+alpha_initial = 0.02
+joined <- tibble(t = my_sum_plot_$t, y=my_sum_plot_$mean, Name = "Major")
+
+
+model <- nls(y ~ yf * (1- exp(-alpha * t)), start = list(yf = yf_initial, alpha = alpha_initial), data=joined)
+
+
+plot(my_sum_plot_$t, my_sum_plot_$mean, xlab = "Time [s]", ylab = "Normalised Major Axis Length [px]") + lines(my_sum_plot_$t, predict(model, list(x=my_sum_plot_$t)), col='skyblue',lwd=3) + arrows(x0=my_sum_plot_$t, y0=my_sum_plot_$mean-my_sum_plot_$se,x1=my_sum_plot_$t,y1=my_sum_plot_$mean+my_sum_plot_$se,code=3,angle=90,length=0.01,col='darkgrey') + title(main="Normalised Major Axis Length")
+
+summary(model)
+
+ggsave("Results_Major.png")
+
+# Initial velocity
+major_v <- data.frame(my_sum_plot[c(5,6,7,8,9,10),])
+ggplot(data = major_v,
+       aes(x = t, y = mean)) + geom_line(size = 1) + ylab("Length [px]") + xlab("Time [s]") + geom_point() + geom_smooth(se =TRUE, method = "lm", formula = y ~ x)
+
+model_major_v <- lm(mean~t, data = major_v)
+predict(model_major_v, data = major_v,interval = "confidence")
+
+summary(model_major_v)
+
+pred.int <- predict(model_major_v, interval = "prediction")
+major_v_ <- cbind(major_v, pred.int)
+
+
+
+summary(model_major_v)
+major_speed <- model_major_v %>% tidy() %>% filter(term == "t") %>% pull(estimate)
+
+p <- ggplot(major_v_, aes(t,mean)) + geom_point() + stat_smooth(method = lm, se=FALSE, col="skyblue" )
+p
+p + geom_line(aes(y=lwr), color = "darkgrey", linetype="dashed")+geom_line(aes(y=upr), color = "darkgrey", linetype="dashed") + ylab("Major Length [px]") + xlab("Time [s]") + annotate("text",x=3,y=0,label = paste0("Recoil velocity = ", major_speed," px/s"))
+
+
+
+# For normalised Minor (Minor_)
+my_sum_plot1 <- data %>%
+  group_by(t) %>%
+ dplyr::summarise(n=n(),
+            mean = mean(Minor_),
+            sd = sd(Minor_, na.rm=TRUE)) %>%
+  mutate(se = sd/sqrt(n)) %>%
+  mutate(ic=se*qt((1-0.05)/2 + .5, n-1))
+my_sum_plot1
+my_sum_plot_1 <- data.frame(my_sum_plot1[-c(1,2,3,4),])
+ggplot(data = my_sum_plot_1,
+       aes(x = t, y = mean, group = t)) + geom_line(size = 1) + ylab("Length [px]") + xlab("Time [s]") + geom_point() + geom_smooth(se =TRUE, method = "loess", formula = y ~ x)
+
+time <- my_sum_plot_1$t
+Minor <- my_sum_plot_1$mean
+
+yf_initial = 50
+alpha_initial = 0.02
+joined1 <- tibble(t = my_sum_plot_1$t, y=my_sum_plot_1$mean, Name = "Minor")
+
+
+model1 <- nls(y ~ yf * (1- exp(-alpha * t)), start = list(yf = yf_initial, alpha = alpha_initial), data=joined1)
+
+
+plot(my_sum_plot_1$t, my_sum_plot_1$mean, xlab = "Time [s]", ylab = "Normalised Minor Axis Length [px]") + lines(my_sum_plot_1$t, predict(model1, list(x=my_sum_plot_1$t)), col='pink',lwd=3) + arrows(x0=my_sum_plot_1$t, y0=my_sum_plot_1$mean-my_sum_plot_1$se,x1=my_sum_plot_1$t,y1=my_sum_plot_1$mean+my_sum_plot_1$se,code=3,angle=90,length=0.01,col='darkgrey') + title(main="Normalised Minor Axis Length")
+
+summary(model1)
+
+ggsave("Results_Minor.png")
+
+
+# Initial velocity
+minor_v <- data.frame(my_sum_plot1[c(5,6,7,8,9,10),])
+ggplot(data = minor_v,
+       aes(x = t, y = mean)) + geom_line(size = 1) + ylab("Length [px]") + xlab("Time [s]") + geom_point() + geom_smooth(se =TRUE, method = "lm", formula = y ~ x)
+
+model_minor_v <- lm(mean~t, data = minor_v)
+predict(model_minor_v, data = minor_v,interval = "confidence")
+
+summary(model_minor_v)
+
+pred.int <- predict(model_minor_v, interval = "prediction")
+minor_v_ <- cbind(minor_v, pred.int)
+
+summary(model_minor_v)
+minor_speed <- model_minor_v %>% tidy() %>% filter(term == "t") %>% pull(estimate)
+
+q <- ggplot(minor_v_, aes(t,mean)) + geom_point() + stat_smooth(method = lm, se=FALSE, col="pink" )
+q
+q + geom_line(aes(y=lwr), color = "darkgrey", linetype="dashed")+geom_line(aes(y=upr), color = "darkgrey", linetype="dashed") + ylab("Minor Length [px]") + xlab("Time [s]") + annotate("text",x=3,y=0,label = paste0("Recoil velocity = ", minor_speed," px/s"))
+
+
+
+my_sum_plot__ <- cbind(my_sum_plot, "Name" = "Major")
+my_sum_plot_1__ <- cbind(my_sum_plot_1, "Name" = "Minor")
+total <- rbind(my_sum_plot__, my_sum_plot_1__)
+
+
+plot(total$t, total$mean, xlab = "Time [s]", ylab = "Length of ellipse axis [px]", group = 'Name', color = 'Name',ylim=c(0,500)) + lines(my_sum_plot_$t, predict(model, list(x=my_sum_plot_$t)), col='skyblue',lwd=3) + arrows(x0=my_sum_plot_$t, y0=my_sum_plot_$mean-my_sum_plot_$se,x1=my_sum_plot_$t,y1=my_sum_plot_$mean+my_sum_plot_$se,code=3,angle=90,length=0.01,col='darkgrey') + lines(my_sum_plot_1$t, predict(model1, list(x=my_sum_plot_1$t)), col='pink',lwd=3) + arrows(x0=my_sum_plot_1$t, y0=my_sum_plot_1$mean-my_sum_plot_1$se,x1=my_sum_plot_1$t,y1=my_sum_plot_1$mean+my_sum_plot_1$se,code=3,angle=90,length=0.01,col='darkgrey') + title(main="Length of ellipse axes over time") + legend("bottomright", legend = c("Major Axis Length", "Minor Axis Length"), col = c("skyblue","pink"), lty=1:1,cex=0.8)
+
+print(major_speed)
+
+major_speed <- format(round(major_speed,2))
+minor_speed <- format(round(minor_speed,2))
+print(major_speed/minor_speed)
+
+
+
+new <- cbind(major_v_, "Name" = "Major")
+new_ <- cbind(minor_v_, "Name"="Minor")
+new__ <- rbind(new,new_)
+
+q + geom_line(aes(y=lwr), color = "darkgrey", linetype="dashed")+geom_line(aes(y=upr), color = "darkgrey", linetype="dashed") + ylab("Minor Length [px]") + xlab("Time [s]") + annotate("text",x=3,y=0,label = paste0("Minor axis recoil velocity = ", minor_speed," px/s")) 
+
+new__[,c('upr','lwr','Name')]
+
+ggplot(new__, aes(t,mean,group=Name,ymin=lwr,ymax=upr),color=Name) + geom_point(aes(col=Name)) + stat_smooth(method = lm, se=FALSE, aes(col = Name))  + ylab("Length of ellipse axis [px]") + xlab("Time [s]") + annotate("text",x=3.5,y=-10,,color="skyblue",label = paste0("Major axis recoil velocity = ", major_speed," px/s"))  + annotate("text",x=3.5,y=-20,,color="pink",label = paste0("Minor axis recoil velocity = ", print(minor_speed)," px/s")) + geom_errorbar(width=0.1,aes(col=Name)) + scale_color_manual(values = c("skyblue","pink")) + ggtitle("Initial recoil velocities") + theme_test()
+
+
+ggplot(new__, aes(t,mean,group=Name),color=Name) + geom_point(aes(col=Name)) + stat_smooth(method = lm, se=TRUE, aes(col = Name))  + ylab("Length of ellipse axis [px]") + xlab("Time [s]") + annotate("text",x=3.5,y=-10,label = paste0("Major axis recoil velocity = ", major_speed," px/s"))  + annotate("text",x=3.5,y=-50,,label = paste0("Minor axis recoil velocity = ", print(minor_speed)," px/s"))  + scale_color_manual(values = c("skyblue","pink")) + ggtitle("Initial recoil velocities") + theme_test() + ylim(-200,500)
+
+
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
