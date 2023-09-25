@@ -1,0 +1,1 @@
+1,Area,Mean,Min,Max,Angle,Length,Genotype,,Angle,"IF(J2>-90,J2,J2+180)",Corrected_Angle,"IF(K2<=90,K2,K2-180)",FLIPPED,SOP_angle_flipped,FLIPPED_SOP,"IF(P2>=-90,P2,P2+180)",FLIPPED_Normalised_,"IF(Q2<90,Q2,Q2-180)",,FLIPPED_Normalised
