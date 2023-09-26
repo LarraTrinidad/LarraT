@@ -13,3 +13,4 @@ The following codes were written in RStudio (https://posit.co/download/rstudio-d
 /Polarity polar histograms : contains contains an 'Individual Analysis.Rmd' file that can plot the cell elongation data written on 'Angles_Polarity.csv'. To run Kolgomorov-Smirnov tests between genotypes, input all the data on 'KS_Test.csv' and run the 'Average_SD' file.
 
 /T1 transitions rose plots : contains contains a 'T1 Individual Analysis.Rmd' file that can plot the T1 transition orientation data written on 'Angles_T1.csv'.
+
