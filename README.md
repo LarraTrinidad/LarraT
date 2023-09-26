@@ -1,7 +1,13 @@
-# A template user project for use with Chaste.
+A Four-joined gradient and formation of Fat-Dachsous Heterodimers
 
-You now simply click the big green "Use this template" button to use a copy of this repository as the basis of your own new repository under your github username/organisation (this 'template' status avoids complications with forks all being linked back to this repo).
+This repository contains source files the models implemented in my thesis.
 
-Alternatively, if you aren't a github user, you can download a zip (see Releases button) and start your own repository with that.
+The simulations can be ran by first installing Chaste (https://www.cs.ox.ac.uk/chaste/documentation.html) on your machine and clone this repository.
 
-Then see the [User Projects](https://chaste.cs.ox.ac.uk/trac/wiki/ChasteGuides/UserProjects) guide page on the Chaste wiki for more information.
+The code in /test called "TestFtDsSimulations.hpp" is an implementation of the Hale et al., (2015) model (https://elifesciences.org/articles/05789) in 2D using Chaste
+
+Two tests are ran in this code:
+1) static
+2) with cell divisions
+
+The simulations can then be visualised using Paraview (https://www.paraview.org/)
