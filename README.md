@@ -8,7 +8,9 @@ The following codes were written in RStudio (https://posit.co/download/rstudio-d
 
 /Circular laser ablations : contains two R codes -  one can plot the invidiual sample's recoil velocities ('Individual laser ablation') and another that can plot the average across samples 'Averaged laser ablation'
 
-/One-phase exponential FRAP : contains an 'One-phase exponential.Rmd' code that can fit a one-phase exponential line to your FRAP data held in 'Individual wing'. Two output .csv files will be generated one you analyse all your samples. You can combine the samples (per genotype) using the 'One-phase Combined Plots.Rmd'.
+/One-phase exponential FRAP : contains an 'One-phase exponential.Rmd' code that can fit a one-phase exponential line to your FRAP data held in 'Individual wing'. Two output .csv files will be generated once you analyse all your samples. You can combine the samples (per genotype) using the 'One-phase Combined Plots.Rmd'. A 'Comparing.Rmd' file can then be used to compare the data between different genotypes/conditions.
+
+/Two-phase exponential FRAP : contains an 'Two-phase exponential individual N.Rmd' code that can fit a two-phase exponential line to your FRAP data held in 'Individual wing'. Two output .csv files will be generated once you analyse all your samples. You can combine the samples (per genotype) using the 'Two-phase Combined Plots.Rmd'.
 
 /Polarity polar histograms : contains contains an 'Individual Analysis.Rmd' file that can plot the cell elongation data written on 'Angles_Polarity.csv'. To run Kolgomorov-Smirnov tests between genotypes, input all the data on 'KS_Test.csv' and run the 'Average_SD' file.
 
