@@ -1,0 +1,198 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+
+library(ggplot2)
+library(ggpubr)
+library(ggsignif)
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(reshape2)
+library(matrixStats)
+library(readr)
+library(tidyverse)
+library(broom)
+library(msm)
+
+
+
+
+# Enter genotype names #
+
+Genotype_1 <- ""
+Genotype_2 <- ""
+
+
+compare <- read_csv("Comparing.csv")
+compare
+
+ggplot(data = compare, aes(x=Name, y=ymax, fill=Name)) + geom_boxplot() + ggsignif::geom_signif(comparisons = list(c(Genotype_1, Genotype_2)),map_signif_level = FALSE, y_position=c(1.1)) + ylab("y_max") + theme(text=element_text(size=15), element_line(size=0.01)) + theme(axis.text.x = element_text(angle = 55, vjust=1, hjust=1)) + scale_fill_brewer(palette="Pastel1") + stat_summary(fun=mean, geom="text", col="darkred", vjust=1.5,aes(label=paste("Mean:", round(..y..,digits=2)))) + geom_point()
+
+#ymax <- ggplot(data = compare, aes(x=Name, y=ymax, fill=Name)) + geom_boxplot() + ggsignif::geom_signif(comparisons = list(c("Ft_H", "Ft_V"),c("Ft_H", "Ft_dpy_H"), c("Ft_dpy_H","Ft_dpy_V"),c("Ft_V","Ft_dpy_V")), map_signif_level = FALSE) + ylab("y_max") + theme(text=element_text(size=15), element_line(size=0.01)) + theme(axis.text.x = element_text(angle = 55, vjust=1, hjust=1)) + scale_fill_brewer(palette="Pastel1") + stat_summary(fun=mean, geom="text", col="darkred", vjust=1.5,aes(label=paste("Mean:", round(..y..,digits=2)))) + geom_point()
+
+my_comparisons_1 <- list(c(Genotype_1, Genotype_2))
+#method1 <- "anova" 
+#method2 <- "t.test" 
+
+#ymax + ggsignif::geom_signif(comparisons = my_comparisons_1, method = method2, label = "p.format", na.rm = TRUE, map_signif_level = FALSE, y_position = c(1.1,1.2,1.3,1.4))
+
+
+
+
+
+
+
+ggplot(data = compare, aes(x=Name, y=y0, fill=Name)) + geom_boxplot() + geom_signif(comparisons = my_comparisons_1, map_signif_level = TRUE, y_position=c(900)) + ylab("y_0") + theme(text=element_text(size=15), element_line(size=0.01)) + theme(axis.text.x = element_text(angle = 55, vjust=1, hjust=1)) + scale_fill_brewer(palette="Pastel1")+ stat_summary(fun=mean, geom="text", col="darkred", vjust=1.5,aes(label=paste("Mean:", round(..y..,digits=1)))) + geom_point()
+
+
+
+
+ggplot(data = compare, aes(x=Name, y=Unstable_Amount, fill=Name)) + geom_boxplot() + geom_signif(comparisons = my_comparisons_1, map_signif_level = TRUE, y_position=c(900)) + ylab("Unstable_Amount") + theme(text=element_text(size=15), element_line(size=0.01)) + theme(axis.text.x = element_text(angle = 55, vjust=1, hjust=1)) + scale_fill_brewer(palette="Pastel1") + stat_summary(fun=mean, geom="text", col="darkred", vjust=1.5,aes(label=paste("Mean:", round(..y..,digits=1)))) + geom_point()
+
+ggplot(data = compare, aes(x=Name, y=Stable_Amount, fill=Name)) + geom_boxplot() + geom_signif(comparisons = my_comparisons_1, map_signif_level = TRUE, y_position=c(400)) + ylab("Stable_Amount") + theme(text=element_text(size=15), element_line(size=0.01)) + theme(axis.text.x = element_text(angle = 55, vjust=1, hjust=1)) + scale_fill_brewer(palette="Pastel1")+ stat_summary(fun=mean, geom="text", col="darkred", vjust=1.5,aes(label=paste("Mean:", round(..y..,digits=1)))) + geom_point()
+
+
+
+stack <- data.frame("Name" = compare$Name, "Unstable_Amount"= compare$Unstable_Amount, "Stable_Amount" = compare$Stable_Amount)
+stack
+
+stacked1 <- data.frame("Name" = stack$Name, "Type" = "Stable", "Amount" = stack$Stable_Amount)
+stacked2 <- data.frame("Name" = stack$Name, "Type" = "Unstable", "Amount" = stack$Unstable_Amount)
+stacked <- rbind(stacked1, stacked2)
+
+
+my_sum_stable_overall <- stacked %>%
+  group_by(Name, Type) %>%
+  dplyr::summarise(n=n(),
+            mean = mean(Amount),
+            sd = sd(Amount, na.rm=TRUE)) %>%
+  mutate(se = sd/sqrt(n)) %>%
+  mutate(ic=se*qt((1-0.05)/2 + .5, n-1))
+my_sum_stable_overall
+N <- my_sum_stable_overall$n[1]
+
+#within(my_sum_stable_overall, mean2 <- ave(mean, Name, FUN=cumsum))
+
+Y <- my_sum_stable_overall %>% mutate(mean3 = cumsum(mean)) 
+Y
+X <- ggplot(Y, aes(x=Name, y=mean, fill = factor(Type, levels=c("Unstable", "Stable")))) + geom_bar(stat = "identity")  + xlab("Name") + ylab("Amount") + theme_minimal() + ggtitle(paste("Stable and unstable amounts"))
+X + geom_errorbar(aes(ymin = mean3 - se, ymax = mean3 + se), width=0.25) + geom_signif(comparisons = my_comparisons_1, map_signif_level = TRUE, y_position=c(700,710,720,730)) + geom_point()
+
+
+ggplot(data = compare, aes(x=Name, y=Rate_Constant, fill=Name)) + geom_boxplot() + geom_signif(comparisons = my_comparisons_1, map_signif_level = TRUE, y_position=c(0.1,0.11,0.12,0.13)) + ylab("Rate Constant") + theme(text=element_text(size=15), element_line(size=0.01)) + theme(axis.text.x = element_text(angle = 55, vjust=1, hjust=1)) + scale_fill_brewer(palette="Pastel1") + stat_summary(fun=mean, geom="text", col="darkred", vjust=1.5,aes(label=paste("Mean:", round(..y..,digits=1)))) + geom_point()
+
+ggplot(data = compare, aes(x=Name, y=Time_Constant, fill=Name)) + geom_boxplot() + geom_signif(comparisons = my_comparisons_1, map_signif_level = TRUE, y_position=c(270,290,310,330)) + ylab("Time Constant") + theme(text=element_text(size=15), element_line(size=0.01)) + theme(axis.text.x = element_text(angle = 55, vjust=1, hjust=1)) + scale_fill_brewer(palette="Pastel1")+ stat_summary(fun=mean, geom="text", col="darkred", vjust=1.5,aes(label=paste("Mean:", round(..y..,digits=1)))) + geom_point()
+
+ggplot(data = compare, aes(x=Name, y=HalfLife, fill=Name)) + geom_boxplot() + geom_signif(comparisons = my_comparisons_1, map_signif_level = TRUE, y_position=c(270,290,310,330)) + ylab("Half-Life") + theme(text=element_text(size=15), element_line(size=0.01)) + theme(axis.text.x = element_text(angle = 55, vjust=1, hjust=1)) + scale_fill_brewer(palette="Pastel1")+ stat_summary(fun=mean, geom="text", col="darkred", vjust=1.5,aes(label=paste("Mean:", round(..y..,digits=1)))) + geom_point()
+
+
+joined <- read_csv("Combined_Plot.csv")
+
+joined
+qplot(t, y_ave, data=joined, geom = 'point', color = Genotype) + geom_point(aes(color = Genotype)) + geom_line(aes(y=.fitted, color = Genotype)) + ylab("Average Normalised Intensity") + xlab("Time(s)") + labs(title= "One-phase exponential fit of average normalised intensity") + theme_minimal(base_size = 30) +
+  geom_errorbar(aes(x=t, ymin = mean - se, ymax = mean + se, color = Genotype), linetype = "twodash", color = "darkgrey") + ylim(0,1.2)
+
+
+
+joined <- data.frame(joined)
+qplot(t, y_ave, data=joined, geom = 'point', color = Genotype) + geom_point(aes(color = Genotype)) + geom_line(aes(y=.fitted, color = Genotype)) + ylab("Average Normalised Intensity") + xlab("Time(s)") + labs(title= "One-phase exponential fit of average normalised intensity") + theme_minimal(base_size = 15) +
+  geom_errorbar(aes(x=t, ymin = mean - se, ymax = mean + se, color = Genotype), linetype = "twodash", color = "darkgrey") + ylim(0,1.2)
+
+#augmented <- df %>% nest(-Region) %>% mutate(fit = map(data, ~nls(y ~ yf * (1- exp(-alpha * t)), start = list(yf = yf_initial, alpha = alpha_initial), control = list(maxiter = 500, printEval = TRUE, warnOnly = TRUE), data=.)), augmented = map(fit, augment), ) %>% unnest (augmented)
+
+start_vals <- list(yf = 0.5, alpha = 0.02)
+yf_initial = 0.5
+alpha_initial = 0.02
+
+joined_H1 <- joined[joined$Genotype == Genotype_1,]
+joined_H <- tibble(t = joined_H1$t, y=joined_H1$y_ave, Genotype = Genotype_1)
+Trial_H <- joined_H %>% nest(-Genotype) %>%
+  mutate(fit_H = map(data, ~nls(y ~ yf * (1- exp(-alpha * t)), start = list(yf = yf_initial, alpha = alpha_initial), data=.)), tidied_H = map(fit_H, tidy), ) %>% unnest(tidied_H) #%>% select(Genotype, term, estimate) %>% spread(term, estimate)
+alpha_H <- Trial_H[2,5]
+yf_H <- Trial_H[1,5]
+alpha_H
+yf_H
+
+joined_V1 <- joined[joined$Genotype == Genotype_2,]
+joined_V <- tibble(t=joined_V1$t, y=joined_V1$y_ave, Genotype = Genotype_2)
+Trial_V <- joined_V %>% nest(-Genotype) %>%
+  mutate(fit_V = map(data, ~nls(y ~ yf * (1- exp(-alpha * t)), start = list(yf = yf_initial, alpha = alpha_initial), data=.)), tidied_V = map(fit_V, tidy), ) %>% unnest(tidied_V) #%>% select(Genotype, term, estimate) %>% spread(term, estimate)
+alpha_V <- Trial_V[2,5]
+yf_V <- Trial_V[1,5]
+alpha_V
+yf_V
+
+
+data_H <- nls(y ~ yf * (1- exp(-alpha * t)), data=joined_H, start = start_vals)
+summary(data_H)
+data_V <- nls(y ~ yf * (1- exp(-alpha * t)), data=joined_V, start = start_vals)
+summary(data_V)
+
+anova(data_H, data_V)
+gap::chow.test(y1=joined_H$y, x1=joined_H$t,y2=joined_V$y,x2=joined_V$t) # Chow Test examines whether parameters of one group of the data are equal to those of other groups. A general rule of thumb that is often used in regression analysis is that if F > 2.5 then we can reject the null hypothesis. Null (H0): yf_H = yf_V, alpha_H = alpha_V.
+
+
+
+
+
+qplot(t, y_ave, data=joined, geom = 'point', color = Genotype) + geom_point(aes(color = Genotype,size=3)) + geom_line(aes(y=.fitted, color = Genotype,size=3)) + ylab("Average Normalised Intensity") + xlab("Time(s)") + labs(title= "One-phase exponential fit of average normalised intensity") + theme_minimal(base_size = 60) +
+  geom_errorbar(aes(x=t, ymin = mean - se, ymax = mean + se, color = Genotype),  color = "darkgrey",size=1.5) + ylim(0,1.2)  
+
+
+
+# no title
+
+qplot(t, y_ave, data=joined, geom = 'point', color = Genotype) + geom_point(aes(color = Genotype,size=3)) + geom_line(aes(y=.fitted, color = Genotype,size=3)) + ylab("Average Normalised Intensity") + xlab("Time [s]")  + theme_minimal(base_size = 60) +
+  geom_errorbar(aes(x=t, ymin = mean - se, ymax = mean + se, color = Genotype),  color = "darkgrey",size=1.5) + ylim(0,1.2)
+
+
+# no title, no SE, with confidence intervals 
+qplot(t, y_ave, data=joined, geom = 'point', color = Genotype) + geom_point(aes(color = Genotype,size=3)) + geom_line(aes(y=.fitted, color = Genotype,size=3)) + ylab("Average Normalised Intensity") + xlab("Time [s]")  + theme_minimal(base_size = 60) + ylim(0,1.2) +  geom_line(aes(y=lwr), linetype=8, size=2) + geom_line(aes(y=upr), linetype=8,size=2)
+
+# no title, with SE, with confidence intervals 
+qplot(t, y_ave, data=joined, geom = 'point', color = Genotype) + geom_point(aes(color = Genotype,size=3)) + geom_line(aes(y=.fitted, color = Genotype,size=3)) + ylab("Average Normalised Intensity") + xlab("Time [s]")  + theme_minimal(base_size = 60) + ylim(0,1.2) +  geom_line(aes(y=lwr), linetype=8, size=2) + geom_line(aes(y=upr), linetype=8,size=2) +
+  geom_errorbar(aes(x=t, ymin = mean - se, ymax = mean + se, color = Genotype),  color = "darkgrey",size=1.5)
+
+
+
+# with title, SE, CI
+qplot(t, y_ave, data=joined, geom = 'point', color = Genotype) + geom_point(aes(color = Genotype,size=3)) + geom_line(aes(y=.fitted, color = Genotype,size=3)) + ylab("Average Normalised Intensity") + xlab("Time(s)") + labs(title= "One-phase exponential fit of average normalised intensity") + theme_minimal(base_size = 60) +
+  geom_errorbar(aes(x=t, ymin = mean - se, ymax = mean + se, color = Genotype),  color = "darkgrey",size=1.5) + ylim(0,1.2)  +  geom_line(aes(y=lwr), linetype=8, size=2) + geom_line(aes(y=upr), linetype=8,size=2) +
+  geom_errorbar(aes(x=t, ymin = mean - se, ymax = mean + se, color = Genotype),  color = "darkgrey",size=1.5)
+
+# with title, no SE, CI
+qplot(t, y_ave, data=joined, geom = 'point', color = Genotype) + geom_point(aes(color = Genotype,size=3)) + geom_line(aes(y=.fitted, color = Genotype,size=3)) + ylab("Average Normalised Intensity") + xlab("Time(s)") + labs(title= "One-phase exponential fit of average normalised intensity") + theme_minimal(base_size = 60)  + ylim(0,1.2)  +  geom_line(aes(y=lwr), linetype=8, size=2) + geom_line(aes(y=upr), linetype=8,size=2) 
+
+
+# Summary statistics for Genotype_1
+summary(data_H)
+# Confidence intervals for Genotype_1
+confint(data_H, level=0.95)
+
+
+# Summary statistics for Genotype_2
+summary(data_V)
+# Confidence intervals for Genotype_2
+confint(data_V, level=0.95)
+
+
+
+
+
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
